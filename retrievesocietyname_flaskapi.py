@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, jsonify
 import pyodbc
 
 app = Flask(__name__)
@@ -16,10 +16,6 @@ try:
     cursor = conn.cursor()
 except pyodbc.Error as e:
     print("Error connecting to the database:", e)
-
-@app.route('/')
-def index():
-    return render_template('index.html')
 
 @app.route('/society_names', methods=['GET'])
 def get_society_names():
