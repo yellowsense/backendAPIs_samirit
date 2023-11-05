@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 import pyodbc
 
-app = Flask(__name)
+app = Flask(__name__)
 
 # Database connection setup
 SERVER = 'maidsqlppserver.database.windows.net'
