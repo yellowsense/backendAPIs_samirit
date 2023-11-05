@@ -28,7 +28,7 @@ def get_society_names():
 
         return jsonify(society_names)  # Return an array directly in JSON
     except pyodbc.Error as e:
-        return jsonify({"error": str(e})
+        return jsonify({"error": str(e)})
 
 @app.route('/insert_maid', methods=['POST'])
 def insert_maid():
