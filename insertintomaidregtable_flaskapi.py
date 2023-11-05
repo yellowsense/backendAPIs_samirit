@@ -4,10 +4,10 @@ import pyodbc
 app = Flask(__name)
 
 # Configure your Azure SQL Database connection
-server = 'your_server_name'
-database = 'your_database_name'
-username = 'your_username'
-password = 'your_password'
+server = 'maidsqlppserver.database.windows.net'
+database = 'miadsqlpp'
+username = 'ysadmin'
+password = 'yellowsense@1234'
 driver = '{ODBC Driver 18 for SQL Server}'
 
 # Create a database connection
