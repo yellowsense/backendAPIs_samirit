@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 import pyodbc
 
-app = Flask(__name)
+app = Flask(__name__)
 
 # Configure your Azure SQL Database connection
 server = 'maidsqlppserver.database.windows.net'
@@ -27,7 +27,7 @@ def insert_maid():
 
         cursor = conn.cursor()
         cursor.execute(
-            "EXEC InsertMaidRegistration ?, ?, ?, ?, ?, ?, ?, ?",
+            "EXEC InsertMaidRegistration ?, ?, ?, ?, ?, ?, ?",
             (aadhar_number, name, phone_number, gender, services, locations, timings)
         )
         conn.commit()
