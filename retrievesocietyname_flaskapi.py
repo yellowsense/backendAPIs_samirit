@@ -1,8 +1,7 @@
 from flask import Flask, request, jsonify
 import pyodbc
 
-app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Change to a strong secret key
+app = Flask(__name)
 
 # Database connection setup
 SERVER = 'maidsqlppserver.database.windows.net'
@@ -24,12 +23,12 @@ def get_society_names():
         cursor.execute("SELECT society_name FROM Society")
         rows = cursor.fetchall()
 
-        # Convert the result into a list of society names
+        # Convert the result into an array of society names
         society_names = [row.society_name for row in rows]
 
-        return jsonify({"society_names": society_names})
+        return jsonify(society_names)  # Return an array directly in JSON
     except pyodbc.Error as e:
-        return jsonify({"error": str(e})
+        return jsonify({"error": str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True)
