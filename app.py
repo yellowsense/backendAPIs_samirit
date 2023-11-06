@@ -17,6 +17,14 @@ try:
 except pyodbc.Error as e:
     print("Error connecting to the database:", e)
 
+# Function to add custom headers to every response
+@app.after_request
+def add_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = 'https://yellowsense.in'  # Replace with your frontend domain
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST'  # You can specify the allowed methods
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'  # You can specify the allowed headers
+    return response
+
 @app.route('/society_names', methods=['GET'])
 def get_society_names():
     try:
@@ -52,7 +60,7 @@ def insert_maid():
         cursor.close()
         return jsonify({"message": "Maid entry added successfully"})
     except Exception as e:
-        return jsonify({"error": str(e)})
+        return jsonify({"error": str(e})
 
 if __name__ == '__main__':
     app.run(debug=True)
