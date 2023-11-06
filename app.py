@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # Import CORS
 import pyodbc
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for your Flask app
 
 # Database connection setup
 SERVER = 'maidsqlppserver.database.windows.net'
@@ -51,7 +53,7 @@ def insert_maid():
         cursor.close()
         return jsonify({"message": "Maid entry added successfully"})
     except Exception as e:
-        return jsonify({"error": str(e)})
+        return jsonify({"error": str(e})
 
 if __name__ == '__main__':
     app.run(debug=True)
