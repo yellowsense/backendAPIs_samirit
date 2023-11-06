@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 import pyodbc
 
-app = Flask(__name__)
+app = Flask(__name)
 
 # Database connection setup
 SERVER = 'maidsqlppserver.database.windows.net'
@@ -19,14 +19,14 @@ except pyodbc.Error as e:
 @app.route('/society_names', methods=['GET'])
 def get_society_names():
     try:
-        # Execute a SQL query to retrieve society names
-        cursor.execute("SELECT society_name FROM Society")
+        # Execute a SQL query to retrieve society names and IDs
+        cursor.execute("SELECT society_id, society_name FROM Society")
         rows = cursor.fetchall()
 
-        # Convert the result into an array of society names
-        society_names = [row.society_name for row in rows]
+        # Convert the result into an array of dictionaries with id and name
+        society_data = [{"id": row.society_id, "name": row.society_name} for row in rows]
 
-        return jsonify(society_names)  # Return an array directly in JSON
+        return jsonify(society_data)  # Return JSON with id and name
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
 
