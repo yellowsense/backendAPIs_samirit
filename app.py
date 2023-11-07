@@ -1,8 +1,9 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # Import CORS
+from flask_cors import CORS, cross_origin  # Import CORS
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})  # Enable CORS for your Flask app
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 # Database connection setup
 SERVER = 'maidsqlppserver.database.windows.net'
@@ -26,6 +27,7 @@ def add_headers(response):
     return response
 
 @app.route('/society_names', methods=['GET'])
+@cross_origin()
 def get_society_names():
     try:
         # Execute a SQL query to retrieve society names and IDs
@@ -40,6 +42,7 @@ def get_society_names():
         return jsonify({"error": str(e)})
 
 @app.route('/insert_maid', methods=['POST'])
+@cross_origin()
 def insert_maid():
     try:
         data = request.get_json()
