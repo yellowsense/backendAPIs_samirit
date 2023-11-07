@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin  # Import CORS
-
+import pyodbc
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})  # Enable CORS for your Flask app
 app.config['CORS_HEADERS'] = 'Content-Type'
