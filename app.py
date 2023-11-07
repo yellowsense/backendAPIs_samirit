@@ -63,7 +63,7 @@ def insert_maid():
         cursor.close()
         return jsonify({"message": "Maid entry added successfully"})
     except Exception as e:
-        return jsonify({"error": str(e})
+        return jsonify({"error": str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True)
