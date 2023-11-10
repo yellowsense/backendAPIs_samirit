@@ -158,7 +158,7 @@ def insert_maid():
     except Exception as e:
         return jsonify({"error": str(e)})
 
-@app.route('/get_maid_details', methods=['GET'])
+@app.route('/get_all_maid_details', methods=['GET'])
 @cross_origin()
 def get_all_maid_details():
     try:
@@ -180,6 +180,30 @@ def get_all_maid_details():
             maid_details_list.append(maid_details)
 
         return jsonify({"maid_details": maid_details_list})
+    except pyodbc.Error as e:
+        return jsonify({"error": str(e)})
+
+@app.route('/get_maid_details/<int:maid_id>', methods=['GET'])
+@cross_origin()
+def get_maid_details(maid_id):
+    try:
+        cursor.execute("SELECT * FROM maidreg WHERE ID=?", (maid_id,))
+        row = cursor.fetchone()
+
+        if row:
+            maid_details = {
+                "ID": row.ID,
+                "AadharNumber": row.AadharNumber,
+                "Name": row.Name,
+                "PhoneNumber": row.PhoneNumber,
+                "Gender": row.Gender,
+                "Services": row.Services.split(','),
+                "Locations": row.Locations.split(','),
+                "Timings": row.Timings
+            }
+            return jsonify(maid_details)
+        else:
+            return jsonify({"error": "Maid not found"})
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
 
