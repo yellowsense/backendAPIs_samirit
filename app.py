@@ -136,14 +136,13 @@ def get_society_names():
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
 
-@app.route('/insert_maid', methods=['POST', 'OPTIONS'])
+# Modify the /insert_maid endpoint to take parameters directly
+@app.route('/insert_maid', methods=['POST'])
 @cross_origin()
 def insert_maid():
-    if request.method == 'OPTIONS':
-        return jsonify({"message": "Preflight request successful"}), 200
-
     try:
-        data = request.get_json()
+        # Extract parameters from the JSON body for POST requests
+        data = request.json
         aadhar_number = data.get('aadhar_number')
         name = data.get('name')
         phone_number = data.get('phone_number')
@@ -152,6 +151,7 @@ def insert_maid():
         locations = data.get('locations')
         timings = data.get('timings')
 
+        # Execute the stored procedure
         cursor = conn.cursor()
         cursor.execute(
             "EXEC InsertMaidRegistration ?, ?, ?, ?, ?, ?, ?",
@@ -159,10 +159,13 @@ def insert_maid():
         )
         conn.commit()
         cursor.close()
+        
+        # Return a success message
         return jsonify({"message": "Maid entry added successfully"})
     except Exception as e:
-        app.logger.error("Error adding maid: %s", e)
-        return jsonify({"error": f"Failed to add maid. Error: {str(e)}"}), 500
+        # Return an error message in case of an exception
+        return jsonify({"error": str(e)})
+
 
 @app.route('/get_all_maid_details', methods=['GET'])
 @cross_origin()
