@@ -136,36 +136,42 @@ def get_society_names():
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
 
-# Modify the /insert_maid endpoint to take parameters directly
 @app.route('/insert_maid', methods=['POST'])
 @cross_origin()
 def insert_maid():
     try:
         # Extract parameters from the JSON body for POST requests
         data = request.json
-        aadhar_number = data.get('aadhar_number')
-        name = data.get('name')
-        phone_number = data.get('phone_number')
-        gender = data.get('gender')
-        services = data.get('services')
-        locations = data.get('locations')
-        timings = data.get('timings')
+        aadhar_number = data.get('AadharNumber')
+        name = data.get('Name')
+        phone_number = data.get('PhoneNumber')
+        gender = data.get('Gender')
+        services = data.get('Services')
+        locations = data.get('Locations')
+        timings = data.get('Timings')
 
         # Execute the stored procedure
         cursor = conn.cursor()
         cursor.execute(
-            "EXEC InsertMaidRegistration ?, ?, ?, ?, ?, ?, ?",
+            "EXEC InsertMaidRegistration "
+            "@AadharNumber = ?, "
+            "@Name = ?, "
+            "@PhoneNumber = ?, "
+            "@Gender = ?, "
+            "@Services = ?, "
+            "@Locations = ?, "
+            "@Timings = ?",
             (aadhar_number, name, phone_number, gender, services, locations, timings)
         )
         conn.commit()
         cursor.close()
-        
+
         # Return a success message
         return jsonify({"message": "Maid entry added successfully"})
     except Exception as e:
-        # Return an error message in case of an exception
-        return jsonify({"error": str(e)})
-
+        # Log the error and return an error message in case of an exception
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
 
 @app.route('/get_all_maid_details', methods=['GET'])
 @cross_origin()
