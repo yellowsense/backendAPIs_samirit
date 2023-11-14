@@ -16,9 +16,11 @@ connectionString = f'DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={SERVER};DA
 
 try:
     conn = pyodbc.connect(connectionString)
+    app.logger.info("Connected to the database.")
     cursor = conn.cursor()
 except pyodbc.Error as e:
-    print("Error connecting to the database:", e)
+    app.logger.error("Error connecting to the database: %s", e)
+    raise
 
 # Function to add custom headers to every response
 @app.after_request
@@ -134,9 +136,12 @@ def get_society_names():
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
 
-@app.route('/insert_maid', methods=['POST'])
+@app.route('/insert_maid', methods=['POST', 'OPTIONS'])
 @cross_origin()
 def insert_maid():
+    if request.method == 'OPTIONS':
+        return jsonify({"message": "Preflight request successful"}), 200
+
     try:
         data = request.get_json()
         aadhar_number = data.get('aadhar_number')
@@ -156,7 +161,8 @@ def insert_maid():
         cursor.close()
         return jsonify({"message": "Maid entry added successfully"})
     except Exception as e:
-        return jsonify({"error": str(e)})
+        app.logger.error("Error adding maid: %s", e)
+        return jsonify({"error": f"Failed to add maid. Error: {str(e)}"}), 500
 
 @app.route('/get_all_maid_details', methods=['GET'])
 @cross_origin()
@@ -206,7 +212,6 @@ def get_maid_details(maid_id):
             return jsonify({"error": "Maid not found"})
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
-
 
 if __name__ == '__main__':
     app.run(debug=True)
