@@ -15,9 +15,9 @@ PASSWORD = 'yellowsense@1234'
 connectionString = f'DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={SERVER};DATABASE={DATABASE};UID={USERNAME};PWD={PASSWORD}'
 
 try:
-    conn = pyodbc.connect(connectionString)
-    app.logger.info("Connected to the database.")
-    cursor = conn.cursor()
+    with pyodbc.connect(connectionString) as conn:
+        app.logger.info("Connected to the database.")
+        cursor = conn.cursor()
 except pyodbc.Error as e:
     app.logger.error("Error connecting to the database: %s", e)
     raise
@@ -172,7 +172,7 @@ def insert_maid():
         # Log the error and return an error message in case of an exception
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
-        
+
 @app.route('/get_all_maid_details', methods=['GET'])
 @cross_origin()
 def get_all_maid_details():
