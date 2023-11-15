@@ -3,7 +3,7 @@ from flask_cors import CORS, cross_origin
 import pyodbc
 from datetime import time
 
-app = Flask(__name__)
+app = Flask(_name_)
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
@@ -183,6 +183,7 @@ def get_all_maid_details():
         maid_details_list = []
         for row in rows:
             maid_details = {
+                "ID": row.ID,
                 "AadharNumber": row.AadharNumber,
                 "Name": row.Name,
                 "PhoneNumber": row.PhoneNumber,
@@ -206,6 +207,7 @@ def get_maid_details(maid_id):
 
         if row:
             maid_details = {
+                "ID": row.ID,
                 "AadharNumber": row.AadharNumber,
                 "Name": row.Name,
                 "PhoneNumber": row.PhoneNumber,
@@ -220,5 +222,5 @@ def get_maid_details(maid_id):
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
 
-if __name__ == '__main__':
+if _name_ == '_main_':
     app.run(debug=True)
