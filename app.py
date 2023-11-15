@@ -41,13 +41,14 @@ def parse_time_string(time_str):
 
 def get_maidreg_data():
     try:
-        cursor.execute("SELECT Name, Gender, Services, Locations, Timings FROM maidreg")
+        cursor.execute("SELECT Id, Name, Gender, Services, Locations, Timings FROM maidreg")
         rows = cursor.fetchall()
 
         # Convert the result into a list of dictionaries
         maidreg_data = []
         for row in rows:
             maid = {
+                "Id":row.Id,
                 "Name": row.Name,
                 "Gender": row.Gender,
                 "Services": row.Services.split(','),
