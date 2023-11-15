@@ -3,7 +3,7 @@ from flask_cors import CORS, cross_origin
 import pyodbc
 from datetime import time
 
-app = Flask(_name_)
+app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
@@ -119,5 +119,5 @@ def get_matching_providers():
         return jsonify({"providers": "No matching service providers found"})
 
 
-if _name_ == '_main_':
+if __name__ == '__main__':
     app.run(debug=True)
