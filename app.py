@@ -41,13 +41,12 @@ def parse_time_string(time_str):
 
 def get_maidreg_data():
     try:
-        cursor.execute("SELECT Name, Gender, Services, Locations, Timings FROM maidreg")
+        cursor.execute("SELECT ID, Name, Gender, Services, Locations, Timings FROM maidreg")
         rows = cursor.fetchall()
-
-        # Convert the result into a list of dictionaries
         maidreg_data = []
         for row in rows:
             maid = {
+                "ID": row.ID,  # Add this line to include the "ID" key
                 "Name": row.Name,
                 "Gender": row.Gender,
                 "Services": row.Services.split(','),
@@ -55,42 +54,34 @@ def get_maidreg_data():
                 "Timings": row.Timings
             }
             maidreg_data.append(maid)
-
         return maidreg_data
     except pyodbc.Error as e:
         return []
 
+
 service_providers = get_maidreg_data()
 
 def find_matching_service_providers(Locations, Services, date, start_time_str):
-    # Parse the start_time from the input
     start_time = parse_time_string(start_time_str)
-
     if start_time is None:
         return {"error": "Invalid start_time format"}
-
     matching_providers = []
-
     for provider in service_providers:
         if any(service in Services for service in provider["Services"]):
             if any(location in Locations for location in provider["Locations"]):
-                # Assume that providers are available on all dates
-                # Parse the timings string into time ranges
                 Timings = provider["Timings"].split(',')
                 for timing_range in Timings:
                     start_str, end_str = timing_range.split('-')
                     start = parse_time_string(start_str)
                     end = parse_time_string(end_str)
-
+                    print(f"Start: {start}, End: {end}, Start Time: {start_time}")
                     if start is None or end is None:
                         return {"error": "Invalid timing format"}
-
-                    # Check if the start_time falls within the timing range
                     if start <= start_time < end:
-                        matching_providers.append(provider)
-                        break  # No need to check other timing ranges for this provider
-
+                        matching_providers.append({"ID": provider["ID"], **provider})
+                        break
     return matching_providers
+
 
 @app.route('/get_matching_service_providers', methods=['GET', 'POST'])
 @cross_origin()
