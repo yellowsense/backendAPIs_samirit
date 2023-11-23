@@ -178,10 +178,13 @@ def find_matching_service_providers(Locations, Services, date, start_time_str):
 
     matching_providers = []
     for provider in service_providers:
-        #Check if the specified location is in the provider's list of locations
+        # Check if the specified location is in the provider's list of locations
         if isinstance(provider["Locations"], list) and provider["Locations"] is not None:
-            # Update: Case-insensitive and whitespace-insensitive comparison
-            if any(Locations.strip().lower() in loc.strip("' ").lower() for loc in provider["Locations"]):
+            # Split Locations into a list and perform case-insensitive and whitespace-insensitive comparison
+            specified_locations = [loc.strip("' ").lower() for loc in Locations.split(',')]
+            provider_locations = [loc.strip("' ").lower() for loc in provider["Locations"]]
+
+            if any(location in provider_locations for location in specified_locations):
                 # Check if the specified service is in the provider's list of services
                 if Services.lower() in [serv.strip().lower() for serv in provider["Services"]]:
                     # Check if Timings is a valid list
