@@ -363,21 +363,6 @@ def get_all_booking_details():
         app.logger.error("An error occurred: %s", str(e))
         return jsonify({"error": str(e)})
 
-@app.route('/get_booking_details/<int:customer_id>', methods=['GET'])
-@cross_origin()
-def get_booking_details_by_customer_id(customer_id):
-    try:
-        cursor.execute("SELECT * FROM BookingDetails WHERE customer_id=?", (customer_id,))
-        rows = cursor.fetchall()
-
-        columns = [column[0] for column in cursor.description]
-        booking_details_list = [row_to_dict(row, columns) for row in rows]
-
-        return jsonify({"booking_details": booking_details_list})
-    except pyodbc.Error as e:
-        app.logger.error("An error occurred: %s", str(e))
-        return jsonify({"error": str(e)})
-
 @app.route('/book_service', methods=['POST'])
 def book_service():
     try:
