@@ -232,5 +232,68 @@ def get_matching_providers():
     else:
         return jsonify({"providers": "No matching service providers found"})
 
+@app.route('/insert_account_details', methods=['POST'])
+@cross_origin()
+def insert_account_details():
+    try:
+        # Extract parameters from the JSON body for POST requests
+        data = request.json
+        user_id = data.get('UserID')
+        username = data.get('Username')
+        mobile_number = data.get('MobileNumber')
+        password = data.get('Passwrd')
+        role = data.get('Role')
+
+        # Execute the SQL query to insert data into the accountdetails table
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO dbo.accountdetails (UserID, Username, [Mobile Number], Passwrd, Role) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (user_id, username, mobile_number, password, role)
+        )
+        conn.commit()
+        cursor.close()
+
+        # Return a success message
+        return jsonify({"message": "Account details added successfully"})
+    except Exception as e:
+        # Log the error and return an error message in case of an exception
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
+
+@app.route('/login', methods=['POST'])
+@cross_origin()
+def login():
+    try:
+        # Extract parameters from the JSON body for POST requests
+        data = request.json
+        username = data.get('Username')
+        password = data.get('Passwrd')
+
+        # Execute the SQL query to check if the provided username and password match
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT * FROM dbo.accountdetails WHERE Username = ? AND Passwrd = ?",
+            (username, password)
+        )
+        row = cursor.fetchone()
+
+        if row:
+            # Account details found, return the details
+            account_details = {
+                "UserID": row.UserID,
+                "Username": row.Username,
+                "MobileNumber": row['Mobile Number'],
+                "Role": row.Role
+            }
+            return jsonify(account_details)
+        else:
+            # No matching account found
+            return jsonify({"error": "Invalid username or password"}), 401
+    except Exception as e:
+        # Log the error and return an error message in case of an exception
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
