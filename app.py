@@ -238,16 +238,13 @@ def signin():
         username = data.get('Username')
         mobile_number = data.get('MobileNumber')
         email = data.get('Email')
-        password = data.get('Passwrd')  # Assuming 'Passwrd' is the correct column name
-
-        # Hash the password before storing it in the database
-        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        password = data.get('Passwrd')
 
         # Execute the SQL query to insert the new user
         cursor.execute(
             "INSERT INTO accountdetails (Username, MobileNumber, Email, Passwrd, Role) "
             "VALUES (?, ?, ?, ?, ?)",
-            (username, mobile_number, email, hashed_password, 'user')
+            (username, mobile_number, email, password, 'user')
         )
         conn.commit()
 
@@ -257,21 +254,19 @@ def signin():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
-@app.route('/login', methods=['GET'])
+@app.route('/login', methods=['POST'])
 @cross_origin()
-def retrieve_user_details():
+def login():
     try:
-        # Extract parameters from the query string for GET requests
-        username = request.args.get('Username')
-        password = request.args.get('Passwrd')  # Assuming 'Passwrd' is the correct column name
+        # Extract parameters from the JSON body for POST requests
+        data = request.json
+        username = data.get('Username')
+        password = data.get('Passwrd')  # Assuming 'Passwrd' is the correct column name
 
-        # Hash the password before checking it in the database
-        hashed_password = hashlib.sha256(password.encode()).hexdigest()
-
-        # Execute the SQL query to retrieve user details based on username and hashed password
+        # Execute the SQL query to retrieve user details based on username and password
         cursor.execute(
             "SELECT * FROM accountdetails WHERE Username=? AND Passwrd=?",
-            (username, hashed_password)
+            (username, password)
         )
         row = cursor.fetchone()
 
