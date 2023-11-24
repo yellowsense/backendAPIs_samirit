@@ -325,5 +325,25 @@ def get_all_payments():
         app.logger.error("An error occurred: %s", str(e))
         return jsonify({"error": str(e)})
 
+@app.route('/get_payment_details/<string:mobile_number>', methods=['GET'])
+@cross_origin()
+def get_payment_details_by_mobile_number(mobile_number):
+    try:
+        cursor.execute("SELECT * FROM paymentdetails WHERE mobile_number=?", (mobile_number,))
+        row = cursor.fetchone()
+
+        if row:
+            payment_details = {
+                "payment_id": row.payment_id,
+                "person_name": row.person_name,
+                "mobile_number": row.mobile_number
+            }
+            return jsonify(payment_details)
+        else:
+            return jsonify({"error": "Payment detail not found for the given mobile number"})
+    except pyodbc.Error as e:
+        return jsonify({"error": str(e)})
+
+
 if __name__ == '__main__':
     app.run(debug=True)
