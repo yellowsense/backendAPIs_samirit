@@ -259,5 +259,31 @@ def signin_maid():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
+@app.route('/signincustomer', methods=['POST'])
+@cross_origin()
+def sign_in_customer():
+    try:
+        # Extract parameters from the JSON body for POST requests
+        data = request.json
+        name = data.get('Name')
+        mobile_number = data.get('MobileNumber')
+        email_id = data.get('EmailID')
+        password = data.get('Password')
+
+        # Execute the SQL query to insert data into the customer_accountdetails table
+        cursor.execute(
+            "INSERT INTO customer_accountdetails (Name, MobileNumber, EmailID, Password) "
+            "VALUES (?, ?, ?, ?)",
+            (name, mobile_number, email_id, password)
+        )
+        conn.commit()
+
+        # Return a success message
+        return jsonify({"message": "Customer details added successfully"})
+    except Exception as e:
+        # Log the error and return an error message in case of an exception
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
