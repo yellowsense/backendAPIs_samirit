@@ -3,6 +3,7 @@ from flask_cors import CORS, cross_origin
 import pyodbc
 from datetime import time
 from dateutil import parser
+import uuid
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -232,71 +233,6 @@ def get_matching_providers():
     else:
         return jsonify({"providers": "No matching service providers found"})
 
-import uuid
-
-# ... (Previous code for other routes)
-
-@app.route('/insert_account_details', methods=['POST'])
-@cross_origin()
-def insert_account_details():
-    try:
-        # Extract parameters from the JSON body for POST requests
-        data = request.json
-        username = data.get('Username')
-        mobile_number = data.get('MobileNumber')
-        password = data.get('Passwrd')
-        role = data.get('Role')
-
-        # Execute the SQL query to insert data into the accountdetails table
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO dbo.accountdetails (Username, [Mobile Number], Passwrd, Role) "
-            "VALUES (?, ?, ?, ?)",
-            (username, mobile_number, password, role)
-        )
-        conn.commit()
-        cursor.close()
-
-        # Return a success message
-        return jsonify({"message": "Account details added successfully"})
-    except Exception as e:
-        # Log the error and return an error message in case of an exception
-        app.logger.error(str(e))
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/login', methods=['POST'])
-@cross_origin()
-def login():
-    try:
-        # Extract parameters from the JSON body for POST requests
-        data = request.json
-        username = data.get('Username')
-        password = data.get('Passwrd')
-
-        # Execute the SQL query to check if the provided username and password match
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT * FROM dbo.accountdetails WHERE Username = ? AND Passwrd = ?",
-            (username, password)
-        )
-        row = cursor.fetchone()
-
-        if row:
-            # Account details found, return the details
-            account_details = {
-                "UserID": row.UserID,
-                "Username": row.Username,
-                "MobileNumber": row['Mobile Number'],
-                "Role": row.Role
-            }
-            return jsonify(account_details)
-        else:
-            # No matching account found
-            return jsonify({"error": "Invalid username or password"}), 401
-    except Exception as e:
-        # Log the error and return an error message in case of an exception
-        app.logger.error(str(e))
-        return jsonify({"error": "Internal Server Error"}), 500
 
 @app.route('/update_maid', methods=['PUT'])
 def update_maid():
@@ -306,7 +242,7 @@ def update_maid():
     maid_id = data.get('MaidID')
 
     # Fetch maid data based on MaidID
-    cursor.execute("SELECT * FROM maidaccountdetails_with_fk WHERE MaidID=?", (maid_id,))
+    cursor.execute("SELECT * FROM maidaccountdetails WHERE MaidID=?", (maid_id,))
     row = cursor.fetchone()
 
     if row:
@@ -345,6 +281,43 @@ def update_maid():
     else:
         return jsonify({"error": "Maid not found"})
 
+@app.route('/signin_maid', methods=['POST'])
+@cross_origin()
+def signin_maid():
+    try:
+        # Extract parameters from the JSON body for POST requests
+        data = request.json
+        name = data.get('Name')
+        mobile_number = data.get('MobileNumber')
+        email_id = data.get('EmailID')
+        password = data.get('Password')
+
+        # Generate MaidID (e.g., m1, m2, etc.)
+        maid_id = 'm' + str(uuid.uuid4().fields[-1])[:5]
+
+        # Get the latest MaidRegID from the database
+        cursor.execute("SELECT MAX(MaidRegID) FROM dbo.maidaccountdetails")
+        latest_maidreg_id = cursor.fetchone()[0] or 0  # If no records, set to 0
+
+        # Increment MaidRegID for the new entry
+        maidreg_id = latest_maidreg_id + 1
+
+        # Execute the SQL query to insert data into the maidaccountdetails table
+        cursor.execute(
+            "INSERT INTO dbo.maidaccountdetails (MaidID, Name, MobileNumber, EmailID, Password, MaidRegID) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (maid_id, name, mobile_number, email_id, password, maidreg_id)
+        )
+
+        conn.commit()
+        cursor.close()
+
+        # Return a success message
+        return jsonify({"message": "Maid signed in successfully", "MaidID": maid_id, "MaidRegID": maidreg_id})
+    except Exception as e:
+        # Log the error and return an error message in case of an exception
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
