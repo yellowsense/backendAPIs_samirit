@@ -314,9 +314,9 @@ def get_all_payments():
         payment_details_list = []
         for row in rows:
             payment_details = {
-                "PaymentID": row.PaymentID,
-                "PersonName": row.PersonName,
-                "MobileNumber": row.MobileNumber
+                "payment_id": row.payment_id,
+                "person_name": row.person_name,
+                "mobile_number": row.mobile_number
             }
             payment_details_list.append(payment_details)
 
