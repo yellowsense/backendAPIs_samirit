@@ -3,7 +3,6 @@ from flask_cors import CORS, cross_origin
 import pyodbc
 from datetime import time
 from dateutil import parser
-import uuid
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -179,13 +178,10 @@ def find_matching_service_providers(Locations, Services, date, start_time_str):
 
     matching_providers = []
     for provider in service_providers:
-        # Check if the specified location is in the provider's list of locations
+        #Check if the specified location is in the provider's list of locations
         if isinstance(provider["Locations"], list) and provider["Locations"] is not None:
-            # Split Locations into a list and perform case-insensitive and whitespace-insensitive comparison
-            specified_locations = [loc.strip("' ").lower() for loc in Locations.split(',')]
-            provider_locations = [loc.strip("' ").lower() for loc in provider["Locations"]]
-
-            if any(location in provider_locations for location in specified_locations):
+            # Update: Case-insensitive and whitespace-insensitive comparison
+            if any(Locations.strip().lower() in loc.strip("' ").lower() for loc in provider["Locations"]):
                 # Check if the specified service is in the provider's list of services
                 if Services.lower() in [serv.strip().lower() for serv in provider["Services"]]:
                     # Check if Timings is a valid list
@@ -232,77 +228,6 @@ def get_matching_providers():
         return jsonify({"providers": matching_providers})
     else:
         return jsonify({"providers": "No matching service providers found"})
-
-@app.route('/insert_account_details', methods=['POST'])
-@cross_origin()
-def insert_account_details():
-    try:
-        # Extract parameters from the JSON body for POST requests
-        data = request.json
-        user_id = data.get('UserID')
-        username = data.get('Username')
-        mobile_number = data.get('MobileNumber')
-        password = data.get('Passwrd')
-        role = data.get('Role')
-        email = data.get('Emailaddress')
-
-        # Execute the SQL query to insert data into the accountdetails table
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO dbo.accountdetails (UserID, Username, [Mobile Number], Passwrd, Role, Emailaddress) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (user_id, username, mobile_number, password, role, email)
-        )
-        conn.commit()
-        cursor.close()
-
-        # Return a success message
-        return jsonify({"message": "Account details added successfully"})
-    except Exception as e:
-        # Log the error and return an error message in case of an exception
-        app.logger.error(str(e))
-        return jsonify({"error": "Internal Server Error"}), 500
-
-@app.route('/login', methods=['GET', 'POST'])
-@cross_origin()
-def login():
-    try:
-        if request.method == 'POST':
-            # Extract parameters from the JSON body for POST requests
-            data = request.json
-            username = data.get('Username')
-            password = data.get('Passwrd')
-        elif request.method == 'GET':
-            # Extract parameters from the URL for GET requests
-            username = request.args.get('Username')
-            password = request.args.get('Passwrd')
-        else:
-            return jsonify({"error": "Unsupported method"}), 400
-
-        # Execute the SQL query to check if the provided username and password match
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT * FROM dbo.accountdetails WHERE Username = ? AND Passwrd = ?",
-            (username, password)
-        )
-        row = cursor.fetchone()
-
-        if row:
-            # Account details found, return the details
-            account_details = {
-                "UserID": row.UserID,
-                "Username": row.Username,
-                "MobileNumber": row['Mobile Number'],
-                "Role": row.Role
-            }
-            return jsonify(account_details)
-        else:
-            # No matching account found
-            return jsonify({"error": "Invalid username or password"}), 401
-    except Exception as e:
-        # Log the error and return an error message in case of an exception
-        app.logger.error(str(e))
-        return jsonify({"error": "Internal Server Error"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
