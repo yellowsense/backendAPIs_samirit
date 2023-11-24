@@ -260,13 +260,13 @@ def login():
     try:
         # Extract parameters from the JSON body for POST requests
         data = request.json
-        username = data.get('Username')
+        mobile_number = data.get('MobileNumber')
         password = data.get('Passwrd')  # Assuming 'Passwrd' is the correct column name
 
-        # Execute the SQL query to retrieve user details based on username and password
+        # Execute the SQL query to retrieve user details based on mobile number and password
         cursor.execute(
-            "SELECT * FROM accountdetails WHERE Username=? AND Passwrd=?",
-            (username, password)
+            "SELECT * FROM accountdetails WHERE MobileNumber=? AND Passwrd=?",
+            (mobile_number, password)
         )
         row = cursor.fetchone()
 
@@ -283,6 +283,7 @@ def login():
             return jsonify({"error": "User not found"})
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
+
 
 @app.route('/add_payment', methods=['POST'])
 @cross_origin()
