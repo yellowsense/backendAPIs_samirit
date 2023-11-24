@@ -344,6 +344,38 @@ def get_payment_details_by_mobile_number(mobile_number):
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
 
+def row_to_dict(row, columns):
+    return {columns[i]: row[i] for i in range(len(columns))}
 
+@app.route('/get_all_booking_details', methods=['GET'])
+@cross_origin()
+def get_all_booking_details():
+    try:
+        cursor.execute("SELECT * FROM BookingDetails")
+        rows = cursor.fetchall()
+
+        columns = [column[0] for column in cursor.description]
+        booking_details_list = [row_to_dict(row, columns) for row in rows]
+
+        return jsonify({"booking_details": booking_details_list})
+    except pyodbc.Error as e:
+        app.logger.error("An error occurred: %s", str(e))
+        return jsonify({"error": str(e)})
+
+@app.route('/get_booking_details/<int:customer_id>', methods=['GET'])
+@cross_origin()
+def get_booking_details_by_customer_id(customer_id):
+    try:
+        cursor.execute("SELECT * FROM BookingDetails WHERE customer_id=?", (customer_id,))
+        rows = cursor.fetchall()
+
+        columns = [column[0] for column in cursor.description]
+        booking_details_list = [row_to_dict(row, columns) for row in rows]
+
+        return jsonify({"booking_details": booking_details_list})
+    except pyodbc.Error as e:
+        app.logger.error("An error occurred: %s", str(e))
+        return jsonify({"error": str(e)})
+        
 if __name__ == '__main__':
     app.run(debug=True)
