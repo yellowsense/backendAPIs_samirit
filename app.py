@@ -311,17 +311,18 @@ def get_all_payments():
         cursor.execute("SELECT * FROM paymentdetails")
         rows = cursor.fetchall()
 
-        payments_list = []
+        payment_details_list = []
         for row in rows:
             payment_details = {
                 "PaymentID": row.PaymentID,
-                "PersonName": row.person_name,
-                "MobileNumber": row.mobile_number
+                "PersonName": row.PersonName,
+                "MobileNumber": row.MobileNumber
             }
-            payments_list.append(payment_details)
+            payment_details_list.append(payment_details)
 
-        return jsonify({"payments": payments_list})
+        return jsonify({"payment_details": payment_details_list})
     except pyodbc.Error as e:
+        app.logger.error("An error occurred: %s", str(e))
         return jsonify({"error": str(e)})
 
 if __name__ == '__main__':
