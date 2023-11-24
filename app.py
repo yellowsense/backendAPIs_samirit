@@ -244,13 +244,14 @@ def insert_account_details():
         mobile_number = data.get('MobileNumber')
         password = data.get('Passwrd')
         role = data.get('Role')
+        email = data.get('Emailaddress')
 
         # Execute the SQL query to insert data into the accountdetails table
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO dbo.accountdetails (UserID, Username, [Mobile Number], Passwrd, Role) "
+            "INSERT INTO dbo.accountdetails (UserID, Username, [Mobile Number], Passwrd, Role, Emailaddress) "
             "VALUES (?, ?, ?, ?, ?)",
-            (user_id, username, mobile_number, password, role)
+            (user_id, username, mobile_number, password, role, email)
         )
         conn.commit()
         cursor.close()
