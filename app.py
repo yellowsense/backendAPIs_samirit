@@ -232,27 +232,51 @@ def get_matching_providers():
     else:
         return jsonify({"providers": "No matching service providers found"})
 
+import uuid
+
+# ... (Previous code for other routes)
+
 @app.route('/insert_account_details', methods=['POST'])
 @cross_origin()
 def insert_account_details():
     try:
         # Extract parameters from the JSON body for POST requests
         data = request.json
-        user_id = data.get('UserID')
         username = data.get('Username')
         mobile_number = data.get('MobileNumber')
         password = data.get('Passwrd')
         role = data.get('Role')
 
-        # Execute the SQL query to insert data into the accountdetails table
+        # Automatically generate unique MaidID
+        maid_id = f'm{str(uuid.uuid4())[:8]}'
+
+        # Execute the SQL query to insert data into the maidaccountdetails_with_fk table
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO dbo.accountdetails (UserID, Username, [Mobile Number], Passwrd, Role) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (user_id, username, mobile_number, password, role)
+            "INSERT INTO dbo.maidaccountdetails_with_fk (MaidID, Name, MobileNumber, EmailID, Password, MaidRegID) "
+            "VALUES (?, ?, ?, '', '', ?)",
+            (maid_id, username, mobile_number, 0)  # Set MaidRegID to 0 initially
         )
         conn.commit()
-        cursor.close()
+
+        # Get the MaidRegID for the inserted record
+        cursor.execute("SELECT ID FROM dbo.maidaccountdetails_with_fk WHERE MaidID = ?", (maid_id,))
+        maid_reg_id = cursor.fetchone().ID
+
+        # Update the MaidRegID in the existing record
+        cursor.execute(
+            "UPDATE dbo.maidaccountdetails_with_fk SET MaidRegID = ? WHERE MaidID = ?",
+            (maid_reg_id, maid_id)
+        )
+        conn.commit()
+
+        # Insert data into the maidreg table
+        cursor.execute(
+            "INSERT INTO dbo.maidreg (Name, PhoneNumber, Gender, Services, Locations, LocationIDs, Timings, AadharNumber) "
+            "VALUES (?, ?, '', '', '', '', '', '')",  # Update with actual data if needed
+            (username, mobile_number)
+        )
+        conn.commit()
 
         # Return a success message
         return jsonify({"message": "Account details added successfully"})
@@ -294,6 +318,7 @@ def login():
         # Log the error and return an error message in case of an exception
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
