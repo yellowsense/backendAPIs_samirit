@@ -304,5 +304,25 @@ def add_payment():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
+@app.route('/get_all_payments', methods=['GET'])
+@cross_origin()
+def get_all_payments():
+    try:
+        cursor.execute("SELECT * FROM paymentdetails")
+        rows = cursor.fetchall()
+
+        payments_list = []
+        for row in rows:
+            payment_details = {
+                "PaymentID": row.PaymentID,
+                "PersonName": row.person_name,
+                "MobileNumber": row.mobile_number
+            }
+            payments_list.append(payment_details)
+
+        return jsonify({"payments": payments_list})
+    except pyodbc.Error as e:
+        return jsonify({"error": str(e)})
+
 if __name__ == '__main__':
     app.run(debug=True)
