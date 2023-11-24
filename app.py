@@ -229,5 +229,66 @@ def get_matching_providers():
     else:
         return jsonify({"providers": "No matching service providers found"})
 
+@app.route('/signin', methods=['POST'])
+@cross_origin()
+def signin():
+    try:
+        # Extract parameters from the JSON body for POST requests
+        data = request.json
+        username = data.get('Username')
+        mobile_number = data.get('MobileNumber')
+        email = data.get('Email')
+        password = data.get('Passwrd')  # Assuming 'Passwrd' is the correct column name
+
+        # Hash the password before storing it in the database
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+
+        # Execute the SQL query to insert the new user
+        cursor.execute(
+            "INSERT INTO accountdetails (Username, MobileNumber, Email, Passwrd, Role) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (username, mobile_number, email, hashed_password, 'user')
+        )
+        conn.commit()
+
+        # Return a success message
+        return jsonify({"message": "User registration successful"})
+    except Exception as e:
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
+
+@app.route('/login', methods=['GET'])
+@cross_origin()
+def retrieve_user_details():
+    try:
+        # Extract parameters from the query string for GET requests
+        username = request.args.get('Username')
+        password = request.args.get('Passwrd')  # Assuming 'Passwrd' is the correct column name
+
+        # Hash the password before checking it in the database
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+
+        # Execute the SQL query to retrieve user details based on username and hashed password
+        cursor.execute(
+            "SELECT * FROM accountdetails WHERE Username=? AND Passwrd=?",
+            (username, hashed_password)
+        )
+        row = cursor.fetchone()
+
+        if row:
+            user_details = {
+                "UserID": row.UserID,
+                "Username": row.Username,
+                "MobileNumber": row.MobileNumber,
+                "Email": row.Email,
+                "Role": row.Role
+            }
+            return jsonify(user_details)
+        else:
+            return jsonify({"error": "User not found"})
+    except pyodbc.Error as e:
+        return jsonify({"error": str(e)})
+
+
 if __name__ == '__main__':
     app.run(debug=True)
