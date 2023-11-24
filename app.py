@@ -233,126 +233,75 @@ def get_matching_providers():
     else:
         return jsonify({"providers": "No matching service providers found"})
 
-@app.route('/signinmaid', methods=['POST'])
+@app.route('/insert_account_details', methods=['POST'])
 @cross_origin()
-def signin_maid():
+def insert_account_details():
     try:
         # Extract parameters from the JSON body for POST requests
         data = request.json
-        name = data.get('Name')
-        mobile_number = data.get('MobileNumber')
-        email_id = data.get('EmailID')
-        password = data.get('Password')
-
-        # Execute the SQL query to insert data into the maid_accountdetails table
-        cursor.execute(
-            "INSERT INTO maid_accountdetails (Name, MobileNumber, EmailID, Password) "
-            "VALUES (?, ?, ?, ?)",
-            (name, mobile_number, email_id, password)
-        )
-        conn.commit()
-
-        # Return a success message
-        return jsonify({"message": "Maid details added successfully"})
-    except Exception as e:
-        # Log the error and return an error message in case of an exception
-        app.logger.error(str(e))
-        return jsonify({"error": "Internal Server Error"}), 500
-
-@app.route('/signincustomer', methods=['POST'])
-@cross_origin()
-def sign_in_customer():
-    try:
-        # Extract parameters from the JSON body for POST requests
-        data = request.json
-        name = data.get('Name')
-        mobile_number = data.get('MobileNumber')
-        email_id = data.get('EmailID')
-        password = data.get('Password')
-
-        # Execute the SQL query to insert data into the customer_accountdetails table
-        cursor.execute(
-            "INSERT INTO customer_accountdetails (Name, MobileNumber, EmailID, Password) "
-            "VALUES (?, ?, ?, ?)",
-            (name, mobile_number, email_id, password)
-        )
-        conn.commit()
-
-        # Return a success message
-        return jsonify({"message": "Customer details added successfully"})
-    except Exception as e:
-        # Log the error and return an error message in case of an exception
-        app.logger.error(str(e))
-        return jsonify({"error": "Internal Server Error"}), 500
-
-@app.route('/loginmaid', methods=['POST'])
-@cross_origin()
-def login_maid():
-    try:
-        # Extract parameters from the JSON body for POST requests
-        data = request.json
+        user_id = data.get('UserID')
         username = data.get('Username')
-        password = data.get('Password')
+        mobile_number = data.get('MobileNumber')
+        password = data.get('Passwrd')
+        role = data.get('Role')
 
-        # Execute the SQL query to check if the provided username and password match for maid_accountdetails
+        # Execute the SQL query to insert data into the accountdetails table
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT * FROM dbo.maid_accountdetails WHERE Username = ? AND Password = ?",
+            "INSERT INTO dbo.accountdetails (UserID, Username, [Mobile Number], Passwrd, Role) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (user_id, username, mobile_number, password, role)
+        )
+        conn.commit()
+        cursor.close()
+
+        # Return a success message
+        return jsonify({"message": "Account details added successfully"})
+    except Exception as e:
+        # Log the error and return an error message in case of an exception
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
+
+@app.route('/login', methods=['GET', 'POST'])
+@cross_origin()
+def login():
+    try:
+        if request.method == 'POST':
+            # Extract parameters from the JSON body for POST requests
+            data = request.json
+            username = data.get('Username')
+            password = data.get('Passwrd')
+        elif request.method == 'GET':
+            # Extract parameters from the URL for GET requests
+            username = request.args.get('Username')
+            password = request.args.get('Passwrd')
+        else:
+            return jsonify({"error": "Unsupported method"}), 400
+
+        # Execute the SQL query to check if the provided username and password match
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT * FROM dbo.accountdetails WHERE Username = ? AND Passwrd = ?",
             (username, password)
         )
         row = cursor.fetchone()
 
         if row:
-            # Maid account details found, return the details
-            maid_details = {
-                "MaidID": row.MaidID,
+            # Account details found, return the details
+            account_details = {
+                "UserID": row.UserID,
                 "Username": row.Username,
-                "MobileNumber": row.MobileNumber,
-                "EmailID": row.EmailID,
-                "MaidRegID": row.MaidRegID
+                "MobileNumber": row['Mobile Number'],
+                "Role": row.Role
             }
-            return jsonify(maid_details)
+            return jsonify(account_details)
         else:
-            # No matching maid account found
+            # No matching account found
             return jsonify({"error": "Invalid username or password"}), 401
     except Exception as e:
         # Log the error and return an error message in case of an exception
         app.logger.error(str(e))
-        return jsonify({"error": "Internal Server Error"}), 500
-
-@app.route('/logincustomer', methods=['POST'])
-@cross_origin()
-def login_customer():
-    try:
-        # Extract parameters from the JSON body for POST requests
-        data = request.json
-        username = data.get('Username')
-        password = data.get('Password')
-
-        # Execute the SQL query to check if the provided username and password match for customer_accountdetails
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT * FROM dbo.customer_accountdetails WHERE Username = ? AND Password = ?",
-            (username, password)
-        )
-        row = cursor.fetchone()
-
-        if row:
-            # Customer account details found, return the details
-            customer_details = {
-                "CustomerID": row.CustomerID,
-                "Username": row.Username,
-                "MobileNumber": row.MobileNumber,
-                "EmailID": row.EmailID
-            }
-            return jsonify(customer_details)
-        else:
-            # No matching customer account found
-            return jsonify({"error": "Invalid username or password"}), 401
-    except Exception as e:
-        # Log the error and return an error message in case of an exception
-        app.logger.error(str(e))
-        return jsonify({"error": "Internal Server Error"}), 500
+        return jsonify({"error": "Internal Server Error"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
