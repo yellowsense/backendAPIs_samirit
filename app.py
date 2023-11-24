@@ -285,5 +285,74 @@ def sign_in_customer():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
+@app.route('/loginmaid', methods=['POST'])
+@cross_origin()
+def login_maid():
+    try:
+        # Extract parameters from the JSON body for POST requests
+        data = request.json
+        email_id = data.get('EmailID')
+        password = data.get('Password')
+
+        # Execute the SQL query to check if the provided email_id and password match
+        cursor.execute(
+            "SELECT * FROM maid_accountdetails WHERE EmailID = ? AND Password = ?",
+            (email_id, password)
+        )
+        row = cursor.fetchone()
+
+        if row:
+            # Maid details found, return the details
+            maid_details = {
+                "MaidID": row.MaidID,
+                "Name": row.Name,
+                "MobileNumber": row.MobileNumber,
+                "EmailID": row.EmailID
+                # Add other fields if needed
+            }
+            return jsonify(maid_details)
+        else:
+            # No matching maid found
+            return jsonify({"error": "Invalid email or password"}), 401
+    except Exception as e:
+        # Log the error and return an error message in case of an exception
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
+
+@app.route('/logincustomer', methods=['POST'])
+@cross_origin()
+def login_customer():
+    try:
+        # Extract parameters from the JSON body for POST requests
+        data = request.json
+        email_id = data.get('EmailID')
+        password = data.get('Password')
+
+        # Execute the SQL query to check if the provided email_id and password match
+        cursor.execute(
+            "SELECT * FROM customer_accountdetails WHERE EmailID = ? AND Password = ?",
+            (email_id, password)
+        )
+        row = cursor.fetchone()
+
+        if row:
+            # Customer details found, return the details
+            customer_details = {
+                "CustomerID": row.CustomerID,
+                "Name": row.Name,
+                "MobileNumber": row.MobileNumber,
+                "EmailID": row.EmailID
+                # Add other fields if needed
+            }
+            return jsonify(customer_details)
+        else:
+            # No matching customer found
+            return jsonify({"error": "Invalid email or password"}), 401
+    except Exception as e:
+        # Log the error and return an error message in case of an exception
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True)
