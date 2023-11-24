@@ -377,6 +377,107 @@ def get_booking_details_by_customer_id(customer_id):
     except pyodbc.Error as e:
         app.logger.error("An error occurred: %s", str(e))
         return jsonify({"error": str(e)})
-        
+
+@app.route('/book_service', methods=['POST'])
+def book_service():
+    try:
+        data = request.json
+        provider_id = data.get('provider_id')
+
+        # Check if the provider_id is valid
+        cursor.execute('SELECT * FROM maidreg WHERE id = ?', (provider_id,))
+        provider = cursor.fetchone()
+
+        if not provider:
+            return jsonify({"error": "Invalid service provider"}), 400
+
+        # Assuming user_id is obtained from your session or authentication mechanism
+        user_id = data.get('user_id')
+
+        # Book the service by adding a record to the bookings table
+        cursor.execute('INSERT INTO BookingDetails (customer_id, provider_id) VALUES (?, ?)', (user_id, provider_id))
+        conn.commit()
+
+        return jsonify({"message": "Service booked successfully"})
+    except Exception as e:
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
+
+@app.route('/get_booking_details/<int:booking_id>', methods=['GET'])
+@cross_origin()
+def get_booking_details(booking_id):
+    try:
+        query = '''
+            SELECT
+                bd.id AS booking_id,
+                m.Id AS maid_id,
+                m.Name AS maid_name,
+                m.Gender AS maid_gender,
+                m.Services AS maid_services,
+                m.Locations AS maid_locations,
+                ad.UserId AS customer_id,
+                ad.Username AS customer_username,
+                ad.MobileNumber AS customer_mobile_number
+            FROM
+                BookingDetails bd
+                INNER JOIN maidreg m ON bd.provider_id = m.Id
+                INNER JOIN accountdetails ad ON bd.customer_id = ad.UserId
+            WHERE
+                bd.id = ?
+        '''
+
+        cursor.execute(query, (booking_id,))
+        row = cursor.fetchone()
+
+        if row:
+            booking_details = {
+                "booking_id": row.booking_id,
+                "maid_details": {
+                    "maid_id": row.maid_id,
+                    "maid_name": row.maid_name,
+                    "maid_gender": row.maid_gender,
+                    "maid_services": row.maid_services.split(','),
+                    "maid_locations": row.maid_locations.split(',')
+                  
+                },
+                "customer_details": {
+                    "customer_id": row.customer_id,
+                    "customer_username": row.customer_username,
+                    "customer_mobile_number": row.customer_mobile_number
+                 
+                }
+            }
+
+            return jsonify(booking_details)
+        else:
+            return jsonify({"error": "Booking not found"})
+    except pyodbc.Error as e:
+        return jsonify({"error": str(e)})
+    
+@app.route('/edit_user', methods=['PUT'])
+@cross_origin()
+def edit_user():
+    try:
+        # Extract parameters from the JSON body for PUT requests
+        data = request.json
+        user_id = data.get('user_id')  
+        new_name = data.get('new_name')
+        new_mobile_number = data.get('new_mobile_number')
+        new_email = data.get('new_email')
+
+        # Execute the SQL query to update user details
+        cursor.execute(
+            "UPDATE accountdetails SET Username = ?, MobileNumber = ?, Email = ? WHERE UserID = ?",
+            (new_name, new_mobile_number, new_email, user_id)
+        )
+        conn.commit()
+
+        # Return a success message
+        return jsonify({"message": "User details updated successfully"})
+    except Exception as e:
+        # Log the error and return an error message in case of an exception
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
