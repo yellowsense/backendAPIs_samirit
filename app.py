@@ -319,6 +319,53 @@ def login():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
+@app.route('/update_maid', methods=['PUT'])
+def update_maid():
+    data = request.get_json()
+
+    # Assuming 'MaidID' is sent in the request JSON
+    maid_id = data.get('MaidID')
+
+    # Fetch maid data based on MaidID
+    cursor.execute("SELECT * FROM maidaccountdetails_with_fk WHERE MaidID=?", (maid_id,))
+    row = cursor.fetchone()
+
+    if row:
+        maid_data = {
+            "MaidID": row.MaidID,
+            "Name": row.Name,
+            "MobileNumber": row.MobileNumber,
+            "EmailID": row.EmailID,
+            # Add other fields if needed
+        }
+
+        # Update only specified fields
+        updated_fields = []
+        if 'Name' in data:
+            maid_data['Name'] = data['Name']
+            updated_fields.append('Name')
+        if 'MobileNumber' in data:
+            maid_data['MobileNumber'] = data['MobileNumber']
+            updated_fields.append('PhoneNumber')
+        if 'EmailID' in data:
+            maid_data['EmailID'] = data['EmailID']
+            updated_fields.append('EmailID')
+
+        # Update database record
+        cursor.execute("""
+            UPDATE maidaccountdetails_with_fk
+            SET Name=?, MobileNumber=?, EmailID=?
+            WHERE MaidID=?
+        """, (maid_data['Name'], maid_data['MobileNumber'], maid_data['EmailID'], maid_data['MaidID']))
+
+        conn.commit()
+
+        print(f"Maid details updated successfully. Updated fields: {', '.join(updated_fields)}")
+
+        return jsonify({"message": "Maid details updated successfully"})
+    else:
+        return jsonify({"error": "Maid not found"})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
