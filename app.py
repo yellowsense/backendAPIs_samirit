@@ -247,43 +247,22 @@ def insert_account_details():
         password = data.get('Passwrd')
         role = data.get('Role')
 
-        # Automatically generate unique MaidID
-        maid_id = f'm{str(uuid.uuid4())[:8]}'
-
-        # Execute the SQL query to insert data into the maidaccountdetails_with_fk table
+        # Execute the SQL query to insert data into the accountdetails table
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO dbo.maidaccountdetails_with_fk (MaidID, Name, MobileNumber, EmailID, Password, MaidRegID) "
-            "VALUES (?, ?, ?, '', '', ?)",
-            (maid_id, username, mobile_number, 0)  # Set MaidRegID to 0 initially
+            "INSERT INTO dbo.accountdetails (Username, [Mobile Number], Passwrd, Role) "
+            "VALUES (?, ?, ?, ?)",
+            (username, mobile_number, password, role)
         )
         conn.commit()
-
-        # Get the MaidRegID for the inserted record
-        cursor.execute("SELECT ID FROM dbo.maidaccountdetails_with_fk WHERE MaidID = ?", (maid_id,))
-        maid_reg_id = cursor.fetchone().ID
-
-        # Update the MaidRegID in the existing record
-        cursor.execute(
-            "UPDATE dbo.maidaccountdetails_with_fk SET MaidRegID = ? WHERE MaidID = ?",
-            (maid_reg_id, maid_id)
-        )
-        conn.commit()
-
-        # Insert data into the maidreg table
-        cursor.execute(
-            "INSERT INTO dbo.maidreg (Name, PhoneNumber, Gender, Services, Locations, LocationIDs, Timings, AadharNumber) "
-            "VALUES (?, ?, '', '', '', '', '', '')",  # Update with actual data if needed
-            (username, mobile_number)
-        )
-        conn.commit()
+        cursor.close()
 
         # Return a success message
         return jsonify({"message": "Account details added successfully"})
     except Exception as e:
         # Log the error and return an error message in case of an exception
         app.logger.error(str(e))
-        return jsonify({"error": "Internal Server Error"}), 500
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/login', methods=['POST'])
 @cross_origin()
