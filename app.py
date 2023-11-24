@@ -284,6 +284,25 @@ def login():
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
 
+@app.route('/add_payment', methods=['POST'])
+@cross_origin()
+def add_payment():
+    try:
+        data = request.json
+        person_name = data.get('person_name')
+        mobile_number = data.get('mobile_number')
+
+        cursor.execute(
+            "INSERT INTO paymentdetails (person_name, mobile_number) "
+            "VALUES (?, ?)",
+            (person_name, mobile_number)
+        )
+        conn.commit()
+
+        return jsonify({"message": "Payment details added successfully"})
+    except Exception as e:
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
