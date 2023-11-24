@@ -233,55 +233,7 @@ def get_matching_providers():
     else:
         return jsonify({"providers": "No matching service providers found"})
 
-
-@app.route('/update_maid', methods=['PUT'])
-def update_maid():
-    data = request.get_json()
-
-    # Assuming 'MaidID' is sent in the request JSON
-    maid_id = data.get('MaidID')
-
-    # Fetch maid data based on MaidID
-    cursor.execute("SELECT * FROM maidaccountdetails WHERE MaidID=?", (maid_id,))
-    row = cursor.fetchone()
-
-    if row:
-        maid_data = {
-            "MaidID": row.MaidID,
-            "Name": row.Name,
-            "MobileNumber": row.MobileNumber,
-            "EmailID": row.EmailID,
-            # Add other fields if needed
-        }
-
-        # Update only specified fields
-        updated_fields = []
-        if 'Name' in data:
-            maid_data['Name'] = data['Name']
-            updated_fields.append('Name')
-        if 'MobileNumber' in data:
-            maid_data['MobileNumber'] = data['MobileNumber']
-            updated_fields.append('PhoneNumber')
-        if 'EmailID' in data:
-            maid_data['EmailID'] = data['EmailID']
-            updated_fields.append('EmailID')
-
-        # Update database record
-        cursor.execute("""
-            UPDATE maidaccountdetails_with_fk
-            SET Name=?, MobileNumber=?, EmailID=?
-            WHERE MaidID=?
-        """, (maid_data['Name'], maid_data['MobileNumber'], maid_data['EmailID'], maid_data['MaidID']))
-
-        conn.commit()
-
-        print(f"Maid details updated successfully. Updated fields: {', '.join(updated_fields)}")
-
-        return jsonify({"message": "Maid details updated successfully"})
-    else:
-        return jsonify({"error": "Maid not found"})
-
-@app.route('/signin_maid', methods=['POST'])
+@app.route('/signinmaid', methods=['POST'])
 @cross_origin()
 def signin_maid():
     try:
@@ -292,28 +244,16 @@ def signin_maid():
         email_id = data.get('EmailID')
         password = data.get('Password')
 
-        # Generate MaidID (e.g., m1, m2, etc.)
-        maid_id = 'm' + str(uuid.uuid4().fields[-1])[:5]
-
-        # Get the latest MaidRegID from the database
-        cursor.execute("SELECT MAX(MaidRegID) FROM dbo.maidaccountdetails")
-        latest_maidreg_id = cursor.fetchone()[0] or 0  # If no records, set to 0
-
-        # Increment MaidRegID for the new entry
-        maidreg_id = latest_maidreg_id + 1
-
-        # Execute the SQL query to insert data into the maidaccountdetails table
+        # Execute the SQL query to insert data into the maid_accountdetails table
         cursor.execute(
-            "INSERT INTO dbo.maidaccountdetails (MaidID, Name, MobileNumber, EmailID, Password, MaidRegID) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            (maid_id, name, mobile_number, email_id, password, maidreg_id)
+            "INSERT INTO maid_accountdetails (Name, MobileNumber, EmailID, Password) "
+            "VALUES (?, ?, ?, ?)",
+            (name, mobile_number, email_id, password)
         )
-
         conn.commit()
-        cursor.close()
 
         # Return a success message
-        return jsonify({"message": "Maid signed in successfully", "MaidID": maid_id, "MaidRegID": maidreg_id})
+        return jsonify({"message": "Maid details added successfully"})
     except Exception as e:
         # Log the error and return an error message in case of an exception
         app.logger.error(str(e))
