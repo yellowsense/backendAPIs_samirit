@@ -477,7 +477,7 @@ def edit_user():
     except Exception as e:
         # Log the error and return an error message in case of an exception
         app.logger.error(str(e))
-        return jsonify({"error": "Internal Server Error"}), 500
+        return jsonify({"error": "Internal Server Error"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
