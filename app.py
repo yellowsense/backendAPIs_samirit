@@ -257,6 +257,7 @@ def signin():
 @app.route('/login', methods=['POST','GET'])
 @cross_origin()
 def login():
+    print("Received a request to login endpoint.")
     try:
         # Extract parameters from the JSON body for POST requests
         data = request.json
