@@ -254,6 +254,7 @@ def signin():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
+
 @app.route('/login', methods=['POST'])
 @cross_origin()
 def login():
@@ -271,19 +272,14 @@ def login():
         row = cursor.fetchone()
 
         if row:
-            user_details = {
-                "UserID": row.UserID,
-                "Username": row.Username,
-                "MobileNumber": row.MobileNumber,
-                "Email": row.Email,
-                "Role": row.Role
-            }
-            return jsonify(user_details)
+            # Only return a success message
+            return jsonify({"message": "Login successful"})
         else:
-            return jsonify({"error": "User not found"})
+            # Return an error response with a 401 status code (Unauthorized)
+            return jsonify({"message": "Invalid credentials"})
     except pyodbc.Error as e:
+        # Return an error response with a 500 status code (Internal Server Error)
         return jsonify({"error": str(e)})
-
 
 @app.route('/add_payment', methods=['POST'])
 @cross_origin()
