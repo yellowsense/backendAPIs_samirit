@@ -254,7 +254,7 @@ def signin():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['POST','GET'])
 @cross_origin()
 def login():
     try:
