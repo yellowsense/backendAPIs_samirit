@@ -3,6 +3,7 @@ from flask_cors import CORS, cross_origin
 import pyodbc
 from datetime import time
 from dateutil import parser
+from flask_mail import Mail, Message
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -458,7 +459,172 @@ def edit_user():
     except Exception as e:
         # Log the error and return an error message in case of an exception
         app.logger.error(str(e))
-        return jsonify({"error": "Internal Server Error"}), 500
+        return jsonify({"error": "Internal Server Error"})
+
+# Flask-Mail configuration
+app.config['MAIL_SERVER'] = 'smtp.hostinger.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_USERNAME'] = 'confirmation@yellowsense.in'
+app.config['MAIL_PASSWORD'] = 'Confirmation2001#'
+app.config['MAIL_DEFAULT_SENDER'] = 'confirmation@yellowsense.in'
+mail = Mail(app)
+
+@app.route('/confirm_nanny_booking', methods=['POST'])
+def confirm_nanny_booking():
+    try:
+        booking_details = request.json  # Assuming the data is sent as JSON in the request body
+
+        # Extract relevant details from the booking data
+        provider_name = booking_details.get('ProviderName')
+        service_type = booking_details.get('ServiceType')
+        user_name = booking_details.get('UserName')
+        apartment = booking_details.get('Apartment')
+        start_time = booking_details.get('StartTime')
+        user_email = booking_details.get('UserEmail')
+        special_requirements = booking_details.get('SpecialRequirements')
+        child_number = booking_details.get('ChildNumber')
+        user_address = booking_details.get('UserAddress')
+
+        # Send confirmation email to the customer
+        send_confirmation_email(
+            user_email, provider_name, service_type, user_name,
+            apartment, start_time, special_requirements, child_number, user_address
+        )
+
+        # You can also send confirmation emails to the respective service providers here
+
+        return jsonify({'message': 'Booking confirmed and email sent successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def send_confirmation_email(
+    recipient, provider_name, service_type, user_name,
+    apartment, start_time, special_requirements, child_number, user_address
+):
+    subject = 'Booking Confirmation'
+    
+    # Format the booking details for the email body
+    body = f'Dear {user_name},\n\nYour booking with {provider_name} for {service_type} has been confirmed.\n\nBooking Details:\n\n'
+    body += f'Provider Name: {provider_name}\n'
+    body += f'Service Type: {service_type}\n'
+    body += f'User Name: {user_name}\n'
+    body += f'Apartment: {apartment}\n'
+    body += f'Start Time: {start_time}\n'
+    body += f'Special Requirements: {special_requirements}\n'
+    body += f'Child Number: {child_number}\n'
+    body += f'User Address: {user_address}\n'
+    
+    body += '\nThank you for choosing our services!'
+    body +='\nThis is an auto generated mail. Please do not reply to this mail For any further queries feel free to contact us at support@yellowsense.in '
+    
+    msg = Message(subject, recipients=[recipient], body=body)
+    mail.send(msg)
+
+@app.route('/confirm_maid_booking', methods=['POST'])
+def confirm_maid_booking():
+    try:
+        booking_details = request.json  # Assuming the data is sent as JSON in the request body
+
+        # Extract relevant details from the booking data
+        provider_name = booking_details.get('ProviderName')
+        service_type = booking_details.get('ServiceType')
+        user_name = booking_details.get('UserName')
+        apartment = booking_details.get('Apartment')
+        start_time = booking_details.get('StartTime')
+        user_email = booking_details.get('UserEmail')
+        special_requirements = booking_details.get('SpecialRequirements')
+        house_size = booking_details.get('HouseSize')
+        complete_address = booking_details.get('CompleteAddress')
+        user_phone_number = booking_details.get('UserPhoneNumber')
+
+        # Send confirmation email to the customer
+        send_maid_confirmation_email(
+            user_email, provider_name, service_type, user_name,
+            apartment, start_time, special_requirements, house_size, complete_address, user_phone_number
+        )
+
+        return jsonify({'message': 'Maid service booking confirmed and email sent successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def send_maid_confirmation_email(
+    recipient, provider_name, service_type, user_name,
+    apartment, start_time, special_requirements, house_size, complete_address, user_phone_number
+):
+    subject = 'Maid Service Booking Confirmation'
+    
+    # Format the booking details for the email body
+    body = f'Dear {user_name},\n\nYour maid service booking with {provider_name} has been confirmed.\n\nBooking Details:\n\n'
+    body += f'Provider Name: {provider_name}\n'
+    body += f'Service Type: {service_type}\n'
+    body += f'User Name: {user_name}\n'
+    body += f'Apartment: {apartment}\n'
+    body += f'Start Time: {start_time}\n'
+    body += f'Special Requirements: {special_requirements}\n'
+    body += f'House Size: {house_size}\n'
+    body += f'Complete Address: {complete_address}\n'
+    body += f'User Phone Number: {user_phone_number}\n'
+    
+    body += '\nThank you for choosing our services!'
+    body +='\nThis is an auto generated mail. Please do not reply to this mail For any further queries feel free to contact us at support@yellowsense.in '
+
+    
+    msg = Message(subject, recipients=[recipient], body=body)
+    mail.send(msg)
+
+@app.route('/confirm_cook_booking', methods=['POST'])
+def confirm_cook_booking():
+    try:
+        booking_details = request.json  # Assuming the data is sent as JSON in the request body
+
+        # Extract relevant details from the booking data
+        provider_name = booking_details.get('ProviderName')
+        service_type = booking_details.get('ServiceType')
+        user_name = booking_details.get('UserName')
+        apartment = booking_details.get('Apartment')
+        start_time = booking_details.get('StartTime')
+        user_email = booking_details.get('UserEmail')
+        special_requirements = booking_details.get('SpecialRequirements')
+        food_preferences = booking_details.get('FoodPreferences')
+        user_address = booking_details.get('UserAddress')
+        user_phone_number = booking_details.get('UserPhoneNumber')
+
+        # Send confirmation email to the customer
+        send_cook_confirmation_email(
+            user_email, provider_name, service_type, user_name,
+            apartment, start_time, special_requirements, food_preferences, user_address, user_phone_number
+        )
+
+        return jsonify({'message': 'Cook service booking confirmed and email sent successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def send_cook_confirmation_email(
+    recipient, provider_name, service_type, user_name,
+    apartment, start_time, special_requirements, food_preferences, user_address, user_phone_number
+):
+    subject = 'Cook Service Booking Confirmation'
+    
+    # Format the booking details for the email body
+    body = f'Dear {user_name},\n\nYour cook service booking with {provider_name} has been confirmed.\n\nBooking Details:\n\n'
+    body += f'Provider Name: {provider_name}\n'
+    body += f'Service Type: {service_type}\n'
+    body += f'User Name: {user_name}\n'
+    body += f'Apartment: {apartment}\n'
+    body += f'Start Time: {start_time}\n'
+    body += f'Special Requirements: {special_requirements}\n'
+    body += f'Food Preferences: {food_preferences}\n'
+    body += f'User Address: {user_address}\n'
+    body += f'User Phone Number: {user_phone_number}\n'
+    
+    body += '\nThank you for choosing our services!'
+    body +='\nThis is an auto generated mail. Please do not reply to this mail For any further queries feel free to contact us at support@yellowsense.in '
+
+    
+    msg = Message(subject, recipients=[recipient], body=body)
+    mail.send(msg)
 
 if __name__ == '__main__':
     app.run(debug=True)
