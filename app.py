@@ -481,6 +481,7 @@ def confirm_nanny_booking():
         service_type = booking_details.get('ServiceType')
         user_name = booking_details.get('UserName')
         apartment = booking_details.get('Apartment')
+        StartDate = booking_details.get('StartDate')
         start_time = booking_details.get('StartTime')
         user_email = booking_details.get('UserEmail')
         special_requirements = booking_details.get('SpecialRequirements')
@@ -490,7 +491,7 @@ def confirm_nanny_booking():
         # Send confirmation email to the customer
         send_confirmation_email(
             user_email, provider_name, service_type, user_name,
-            apartment, start_time, special_requirements, child_number, user_address
+            apartment, StartDate,start_time, special_requirements, child_number, user_address
         )
 
         # You can also send confirmation emails to the respective service providers here
@@ -501,7 +502,7 @@ def confirm_nanny_booking():
 
 def send_confirmation_email(
     recipient, provider_name, service_type, user_name,
-    apartment, start_time, special_requirements, child_number, user_address
+    apartment,StartDate, start_time, special_requirements, child_number, user_address
 ):
     subject = 'Booking Confirmation'
     
@@ -511,6 +512,7 @@ def send_confirmation_email(
     body += f'Service Type: {service_type}\n'
     body += f'User Name: {user_name}\n'
     body += f'Apartment: {apartment}\n'
+    body += f'Start Date: {StartDate}\n'
     body += f'Start Time: {start_time}\n'
     body += f'Special Requirements: {special_requirements}\n'
     body += f'Child Number: {child_number}\n'
@@ -519,7 +521,9 @@ def send_confirmation_email(
     body += '\nThank you for choosing our services!'
     body +='\nThis is an auto generated mail. Please do not reply to this mail For any further queries feel free to contact us at support@yellowsense.in '
     
-    msg = Message(subject, recipients=[recipient], body=body)
+     # Send to the user and orders email
+    recipients = [recipient, 'orders@yellowsense.in']
+    msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
 
 @app.route('/confirm_maid_booking', methods=['POST'])
@@ -532,6 +536,7 @@ def confirm_maid_booking():
         service_type = booking_details.get('ServiceType')
         user_name = booking_details.get('UserName')
         apartment = booking_details.get('Apartment')
+        StartDate = booking_details.get('StartDate')
         start_time = booking_details.get('StartTime')
         user_email = booking_details.get('UserEmail')
         special_requirements = booking_details.get('SpecialRequirements')
@@ -542,7 +547,7 @@ def confirm_maid_booking():
         # Send confirmation email to the customer
         send_maid_confirmation_email(
             user_email, provider_name, service_type, user_name,
-            apartment, start_time, special_requirements, house_size, complete_address, user_phone_number
+            apartment,StartDate, start_time, special_requirements, house_size, complete_address, user_phone_number
         )
 
         return jsonify({'message': 'Maid service booking confirmed and email sent successfully'})
@@ -551,7 +556,7 @@ def confirm_maid_booking():
 
 def send_maid_confirmation_email(
     recipient, provider_name, service_type, user_name,
-    apartment, start_time, special_requirements, house_size, complete_address, user_phone_number
+    apartment,StartDate, start_time, special_requirements, house_size, complete_address, user_phone_number
 ):
     subject = 'Maid Service Booking Confirmation'
     
@@ -561,6 +566,7 @@ def send_maid_confirmation_email(
     body += f'Service Type: {service_type}\n'
     body += f'User Name: {user_name}\n'
     body += f'Apartment: {apartment}\n'
+    body += f'Start Date: {StartDate}\n'
     body += f'Start Time: {start_time}\n'
     body += f'Special Requirements: {special_requirements}\n'
     body += f'House Size: {house_size}\n'
@@ -571,7 +577,9 @@ def send_maid_confirmation_email(
     body +='\nThis is an auto generated mail. Please do not reply to this mail For any further queries feel free to contact us at support@yellowsense.in '
 
     
-    msg = Message(subject, recipients=[recipient], body=body)
+     # Send to the user and orders email
+    recipients = [recipient, 'orders@yellowsense.in']
+    msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
 
 @app.route('/confirm_cook_booking', methods=['POST'])
@@ -584,6 +592,7 @@ def confirm_cook_booking():
         service_type = booking_details.get('ServiceType')
         user_name = booking_details.get('UserName')
         apartment = booking_details.get('Apartment')
+        StartDate = booking_details.get('StartDate')
         start_time = booking_details.get('StartTime')
         user_email = booking_details.get('UserEmail')
         special_requirements = booking_details.get('SpecialRequirements')
@@ -594,7 +603,7 @@ def confirm_cook_booking():
         # Send confirmation email to the customer
         send_cook_confirmation_email(
             user_email, provider_name, service_type, user_name,
-            apartment, start_time, special_requirements, food_preferences, user_address, user_phone_number
+            apartment,StartDate, start_time, special_requirements, food_preferences, user_address, user_phone_number
         )
 
         return jsonify({'message': 'Cook service booking confirmed and email sent successfully'})
@@ -603,7 +612,7 @@ def confirm_cook_booking():
 
 def send_cook_confirmation_email(
     recipient, provider_name, service_type, user_name,
-    apartment, start_time, special_requirements, food_preferences, user_address, user_phone_number
+    apartment,StartDate, start_time, special_requirements, food_preferences, user_address, user_phone_number
 ):
     subject = 'Cook Service Booking Confirmation'
     
@@ -613,6 +622,7 @@ def send_cook_confirmation_email(
     body += f'Service Type: {service_type}\n'
     body += f'User Name: {user_name}\n'
     body += f'Apartment: {apartment}\n'
+    body += f'Start Date: {StartDate}\n'
     body += f'Start Time: {start_time}\n'
     body += f'Special Requirements: {special_requirements}\n'
     body += f'Food Preferences: {food_preferences}\n'
@@ -623,7 +633,9 @@ def send_cook_confirmation_email(
     body +='\nThis is an auto generated mail. Please do not reply to this mail For any further queries feel free to contact us at support@yellowsense.in '
 
     
-    msg = Message(subject, recipients=[recipient], body=body)
+    # Send to the user and orders email
+    recipients = [recipient, 'orders@yellowsense.in']
+    msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
 
 if __name__ == '__main__':
