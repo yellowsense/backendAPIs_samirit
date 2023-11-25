@@ -624,8 +624,6 @@ def signin():
         # Return an error message with status code 500
         return jsonify({"error": "Internal Server Error"}), 500
 
-
-
 @app.route('/login', methods=['POST'])
 @cross_origin()
 def login():
@@ -651,6 +649,8 @@ def login():
     except pyodbc.Error as e:
         # Return an error response with a 500 status code (Internal Server Error)
         return jsonify({"error": str(e)}), 500
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
