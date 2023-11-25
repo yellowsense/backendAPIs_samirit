@@ -230,6 +230,7 @@ def get_matching_providers():
     else:
         return jsonify({"providers": "No matching service providers found"})
 
+
 @app.route('/signin', methods=['POST'])
 @cross_origin()
 def signin():
@@ -241,7 +242,18 @@ def signin():
         email = data.get('Email')
         password = data.get('Passwrd')
 
-        # Execute the SQL query to insert the new user
+        # Check if the user already exists
+        cursor.execute(
+            "SELECT * FROM accountdetails WHERE Username=? OR MobileNumber=? OR Email=?",
+            (username, mobile_number, email)
+        )
+        existing_user = cursor.fetchone()
+
+        if existing_user:
+            # User already exists, return a message with status code 500
+            return jsonify({"message": "User already registered. Please login."}), 500
+
+        # User does not exist, proceed with registration
         cursor.execute(
             "INSERT INTO accountdetails (Username, MobileNumber, Email, Passwrd, Role) "
             "VALUES (?, ?, ?, ?, ?)",
@@ -249,11 +261,13 @@ def signin():
         )
         conn.commit()
 
-        # Return a success message
-        return jsonify({"message": "User registration successful"})
+        # Return a success message with status code 200
+        return jsonify({"message": "User registration successful"}), 200
     except Exception as e:
         app.logger.error(str(e))
+        # Return an error message with status code 500
         return jsonify({"error": "Internal Server Error"}), 500
+
 
 
 @app.route('/login', methods=['POST'])
@@ -273,14 +287,14 @@ def login():
         row = cursor.fetchone()
 
         if row:
-            # Only return a success message
-            return jsonify({"message": "Login successful"})
+            # Return a success message with a 200 status code
+            return jsonify({"message": "Login successful"}), 200
         else:
             # Return an error response with a 401 status code (Unauthorized)
-            return jsonify({"message": "Invalid credentials"})
+            return jsonify({"message": "Invalid credentials"}), 401
     except pyodbc.Error as e:
         # Return an error response with a 500 status code (Internal Server Error)
-        return jsonify({"error": str(e)})
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/add_payment', methods=['POST'])
 @cross_origin()
