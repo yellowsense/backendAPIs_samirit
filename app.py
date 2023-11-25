@@ -308,7 +308,6 @@ def get_all_booking_details():
     except pyodbc.Error as e:
         app.logger.error("An error occurred: %s", str(e))
         return jsonify({"error": str(e)})
-
 @app.route('/edit_user', methods=['PUT'])
 @cross_origin()
 def edit_user():
