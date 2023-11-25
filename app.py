@@ -254,10 +254,9 @@ def signin():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
-@app.route('/login', methods=['POST','GET'])
+@app.route('/login', methods=['POST'])
 @cross_origin()
 def login():
-    print("Received a request to login endpoint.")
     try:
         # Extract parameters from the JSON body for POST requests
         data = request.json
