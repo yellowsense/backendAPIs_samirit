@@ -28,7 +28,7 @@ except pyodbc.Error as e:
 @app.after_request
 def add_headers(response):
     response.headers['Access-Control-Allow-Origin'] = 'https://yellowsense.in'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     return response
 
@@ -309,8 +309,42 @@ def get_all_booking_details():
         app.logger.error("An error occurred: %s", str(e))
         return jsonify({"error": str(e)})
 
-@app.route('/book_service', methods=['POST'])
-def book_service():
+@app.route('/edit_user', methods=['PUT'])
+@cross_origin()
+def edit_user():
+    try:
+        # Extract parameters from the JSON body for PUT requests
+        data = request.json
+        user_mobile_number = data.get('user_mobile_number')
+        new_name = data.get('new_name')
+        new_mobile_number = data.get('new_mobile_number')
+        new_email = data.get('new_email')
+
+        # Check if the user with the given mobile number exists
+        cursor.execute('SELECT * FROM accountdetails WHERE MobileNumber = ?', (user_mobile_number,))
+        user = cursor.fetchone()
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        # Update the user profile based on the mobile number
+        cursor.execute(
+            "UPDATE accountdetails SET Username = ?, MobileNumber = ?, Email = ? WHERE MobileNumber = ?",
+            (new_name, new_mobile_number, new_email, user_mobile_number)
+        )
+        conn.commit()
+
+        # Return a success message
+        return jsonify({"message": "User profile updated successfully"})
+    except Exception as e:
+        # Log the error and return an error message in case of an exception
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
+
+@app.route('/book_and_get_details', methods=['POST'])
+def book_and_get_details():
+    cursor = conn.cursor()  # Define cursor here
+
     try:
         data = request.json
         provider_id = data.get('provider_id')
@@ -329,15 +363,11 @@ def book_service():
         cursor.execute('INSERT INTO BookingDetails (customer_id, provider_id) VALUES (?, ?)', (user_id, provider_id))
         conn.commit()
 
-        return jsonify({"message": "Service booked successfully"})
-    except Exception as e:
-        app.logger.error(str(e))
-        return jsonify({"error": "Internal Server Error"}), 500
+        # Get the last inserted ID by executing a separate SELECT statement
+        cursor.execute('SELECT @@IDENTITY AS last_inserted_id')
+        last_inserted_id = cursor.fetchone().last_inserted_id
 
-@app.route('/get_booking_details/<int:booking_id>', methods=['GET'])
-@cross_origin()
-def get_booking_details(booking_id):
-    try:
+
         query = '''
             SELECT
                 bd.id AS booking_id,
@@ -356,11 +386,11 @@ def get_booking_details(booking_id):
             WHERE
                 bd.id = ?
         '''
+        cursor.execute(query, (last_inserted_id,))
+        rows = cursor.fetchall()
 
-        cursor.execute(query, (booking_id,))
-        row = cursor.fetchone()
-
-        if row:
+        if rows:
+            row = rows[0]
             booking_details = {
                 "booking_id": row.booking_id,
                 "maid_details": {
@@ -369,46 +399,22 @@ def get_booking_details(booking_id):
                     "maid_gender": row.maid_gender,
                     "maid_services": row.maid_services.split(','),
                     "maid_locations": row.maid_locations.split(',')
-                  
                 },
                 "customer_details": {
                     "customer_id": row.customer_id,
                     "customer_username": row.customer_username,
                     "customer_mobile_number": row.customer_mobile_number
-                 
                 }
             }
 
             return jsonify(booking_details)
         else:
             return jsonify({"error": "Booking not found"})
-    except pyodbc.Error as e:
-        return jsonify({"error": str(e)})
-    
-@app.route('/edit_user', methods=['PUT'])
-@cross_origin()
-def edit_user():
-    try:
-        # Extract parameters from the JSON body for PUT requests
-        data = request.json
-        user_id = data.get('user_id')  
-        new_name = data.get('new_name')
-        new_mobile_number = data.get('new_mobile_number')
-        new_email = data.get('new_email')
-
-        # Execute the SQL query to update user details
-        cursor.execute(
-            "UPDATE accountdetails SET Username = ?, MobileNumber = ?, Email = ? WHERE UserID = ?",
-            (new_name, new_mobile_number, new_email, user_id)
-        )
-        conn.commit()
-
-        # Return a success message
-        return jsonify({"message": "User details updated successfully"})
     except Exception as e:
-        # Log the error and return an error message in case of an exception
-        app.logger.error(str(e))
-        return jsonify({"error": "Internal Server Error"})
+        print(f"Error: {str(e)}")
+        return jsonify({"error": "Internal Server Error"}), 500
+    finally:
+        cursor.close()
 
 # Flask-Mail configuration
 app.config['MAIL_SERVER'] = 'smtp.hostinger.com'
