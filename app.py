@@ -607,7 +607,7 @@ def signin():
         # Check if the user already exists
         cursor.execute(
             "SELECT * FROM accountdetails WHERE Username=? OR MobileNumber=? OR Email=?",
-            (username, mobile_number, email, role)
+            (username, mobile_number, email)
         )
         existing_user = cursor.fetchone()
 
