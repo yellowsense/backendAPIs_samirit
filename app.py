@@ -602,11 +602,12 @@ def signin():
         mobile_number = data.get('MobileNumber')
         email = data.get('Email')
         password = data.get('Passwrd')
+        role = data.get('Role')
 
         # Check if the user already exists
         cursor.execute(
             "SELECT * FROM accountdetails WHERE Username=? OR MobileNumber=? OR Email=?",
-            (username, mobile_number, email)
+            (username, mobile_number, email, role)
         )
         existing_user = cursor.fetchone()
 
@@ -618,7 +619,7 @@ def signin():
         cursor.execute(
             "INSERT INTO accountdetails (Username, MobileNumber, Email, Passwrd, Role) "
             "VALUES (?, ?, ?, ?, ?)",
-            (username, mobile_number, email, password, 'user')
+            (username, mobile_number, email, password, role)
         )
         conn.commit()
 
