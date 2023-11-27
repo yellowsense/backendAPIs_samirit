@@ -603,6 +603,7 @@ def book_and_get_details():
         # Insert into BookingDetails and retrieve the last inserted ID
         cursor.execute('INSERT INTO BookingDetails (customer_mobile_number, provider_mobile_number) OUTPUT INSERTED.id VALUES (?, ?)', (customer_mobile_number, provider_mobile_number))
         last_inserted_id = cursor.fetchone().id
+        conn.commit()
 
         query = '''
             SELECT
