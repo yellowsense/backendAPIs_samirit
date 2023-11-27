@@ -583,6 +583,76 @@ def login():
         # Return an error response with a 500 status code (Internal Server Error)
         return jsonify({"error": str(e)}), 500
 
+@app.route('/book_and_get_details', methods=['POST'])
+def book_and_get_details():
+    cursor = conn.cursor()
+
+    try:
+        data = request.json
+        provider_mobile_number = data.get('provider_mobile_number')
+
+        # Check if the provider_mobile_number is valid
+        cursor.execute('SELECT * FROM maidreg WHERE PhoneNumber = ?', (provider_mobile_number,))
+        provider = cursor.fetchone()
+
+        if not provider:
+            return jsonify({"error": "Invalid service provider"}), 400
+
+        customer_mobile_number = data.get('customer_mobile_number')
+
+        # Insert into BookingDetails and retrieve the last inserted ID
+        cursor.execute('INSERT INTO BookingDetails (customer_mobile_number, provider_mobile_number) OUTPUT INSERTED.id VALUES (?, ?)', (customer_mobile_number, provider_mobile_number))
+        last_inserted_id = cursor.fetchone().id
+
+        query = '''
+            SELECT
+                bd.id AS booking_id,
+                m.Id AS maid_id,
+                m.Name AS maid_name,
+                m.Gender AS maid_gender,
+                m.Services AS maid_services,
+                m.Locations AS maid_locations,
+                ad.MobileNumber AS customer_mobile_number,
+                ad.UserID AS customer_id,
+                ad.Username AS customer_name,
+                ad.Email AS customer_email
+            FROM
+                BookingDetails bd
+                INNER JOIN maidreg m ON bd.provider_mobile_number = m.PhoneNumber
+                INNER JOIN accountdetails ad ON bd.customer_mobile_number = ad.MobileNumber
+            WHERE
+                bd.id = ?
+        '''
+
+        cursor.execute(query, (last_inserted_id,))
+        row = cursor.fetchone()
+
+        if row:
+            booking_details = {
+                "booking_id": row.booking_id,
+                "maid_details": {
+                    "maid_id": row.maid_id,
+                    "maid_name": row.maid_name,
+                    "maid_gender": row.maid_gender,
+                    "maid_services": row.maid_services.split(','),
+                    "maid_locations": row.maid_locations.split(',')
+                },
+                "customer_details": {
+                    "customer_id": row.customer_id,
+                    "customer_mobile_number": row.customer_mobile_number,
+                    "customer_name": row.customer_name,
+                    "customer_email": row.customer_email
+                }
+            }
+
+            return jsonify(booking_details)
+        else:
+            return jsonify({"error": "Booking not found"})
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return jsonify({"error": "Internal Server Error"}), 500
+    finally:
+        cursor.close()
 
 
 
