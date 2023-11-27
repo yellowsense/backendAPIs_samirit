@@ -339,33 +339,26 @@ def edit_user():
         # Log the error and return an error message in case of an exception
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
-
 @app.route('/book_and_get_details', methods=['POST'])
 def book_and_get_details():
-    cursor = conn.cursor()  # Define cursor here
+    cursor = conn.cursor()
 
     try:
         data = request.json
-        provider_id = data.get('provider_id')
+        provider_mobile_number = data.get('provider_mobile_number')
 
-        # Check if the provider_id is valid
-        cursor.execute('SELECT * FROM maidreg WHERE id = ?', (provider_id,))
+        # Check if the provider_mobile_number is valid
+        cursor.execute('SELECT * FROM maidreg WHERE PhoneNumber = ?', (provider_mobile_number,))
         provider = cursor.fetchone()
 
         if not provider:
             return jsonify({"error": "Invalid service provider"}), 400
 
-        # Assuming user_id is obtained from your session or authentication mechanism
-        user_id = data.get('user_id')
+        customer_mobile_number = data.get('customer_mobile_number')
 
-        # Book the service by adding a record to the bookings table
-        cursor.execute('INSERT INTO BookingDetails (customer_id, provider_id) VALUES (?, ?)', (user_id, provider_id))
-        conn.commit()
-
-        # Get the last inserted ID by executing a separate SELECT statement
-        cursor.execute('SELECT @@IDENTITY AS last_inserted_id')
-        last_inserted_id = cursor.fetchone().last_inserted_id
-
+        # Insert into BookingDetails and retrieve the last inserted ID
+        cursor.execute('INSERT INTO BookingDetails (customer_mobile_number, provider_mobile_number) OUTPUT INSERTED.id VALUES (?, ?)', (customer_mobile_number, provider_mobile_number))
+        last_inserted_id = cursor.fetchone().id
 
         query = '''
             SELECT
@@ -375,21 +368,22 @@ def book_and_get_details():
                 m.Gender AS maid_gender,
                 m.Services AS maid_services,
                 m.Locations AS maid_locations,
-                ad.UserId AS customer_id,
-                ad.Username AS customer_username,
-                ad.MobileNumber AS customer_mobile_number
+                ad.MobileNumber AS customer_mobile_number,
+                ad.UserID AS customer_id,
+                ad.Username AS customer_name,
+                ad.Email AS customer_email
             FROM
                 BookingDetails bd
-                INNER JOIN maidreg m ON bd.provider_id = m.Id
-                INNER JOIN accountdetails1 ad ON bd.customer_id = ad.UserId
+                INNER JOIN maidreg m ON bd.provider_mobile_number = m.PhoneNumber
+                INNER JOIN accountdetails ad ON bd.customer_mobile_number = ad.MobileNumber
             WHERE
                 bd.id = ?
         '''
-        cursor.execute(query, (last_inserted_id,))
-        rows = cursor.fetchall()
 
-        if rows:
-            row = rows[0]
+        cursor.execute(query, (last_inserted_id,))
+        row = cursor.fetchone()
+
+        if row:
             booking_details = {
                 "booking_id": row.booking_id,
                 "maid_details": {
@@ -401,8 +395,9 @@ def book_and_get_details():
                 },
                 "customer_details": {
                     "customer_id": row.customer_id,
-                    "customer_username": row.customer_username,
-                    "customer_mobile_number": row.customer_mobile_number
+                    "customer_mobile_number": row.customer_mobile_number,
+                    "customer_name": row.customer_name,
+                    "customer_email": row.customer_email
                 }
             }
 
