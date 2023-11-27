@@ -320,7 +320,7 @@ def edit_user():
         new_email = data.get('new_email')
 
         # Check if the user with the given mobile number exists
-        cursor.execute('SELECT * FROM accountdetails WHERE MobileNumber = ?', (user_mobile_number,))
+        cursor.execute('SELECT * FROM accountdetails1 WHERE MobileNumber = ?', (user_mobile_number,))
         user = cursor.fetchone()
 
         if not user:
@@ -328,7 +328,7 @@ def edit_user():
 
         # Update the user profile based on the mobile number
         cursor.execute(
-            "UPDATE accountdetails SET Username = ?, MobileNumber = ?, Email = ? WHERE MobileNumber = ?",
+            "UPDATE accountdetails1 SET Username = ?, MobileNumber = ?, Email = ? WHERE MobileNumber = ?",
             (new_name, new_mobile_number, new_email, user_mobile_number)
         )
         conn.commit()
@@ -381,7 +381,7 @@ def book_and_get_details():
             FROM
                 BookingDetails bd
                 INNER JOIN maidreg m ON bd.provider_id = m.Id
-                INNER JOIN accountdetails ad ON bd.customer_id = ad.UserId
+                INNER JOIN accountdetails1 ad ON bd.customer_id = ad.UserId
             WHERE
                 bd.id = ?
         '''
@@ -607,7 +607,7 @@ def signin():
 
         # Check if the user already exists based on mobile number and password
         cursor.execute(
-            "SELECT * FROM accountdetails WHERE MobileNumber=? AND Passwrd=?",
+            "SELECT * FROM accountdetails1 WHERE MobileNumber=? AND Passwrd=?",
             (mobile_number, password)
         )
         existing_user = cursor.fetchone()
@@ -618,7 +618,7 @@ def signin():
 
         # User does not exist, proceed with registration
         cursor.execute(
-            "INSERT INTO accountdetails (Username, MobileNumber, Email, Passwrd, Role) "
+            "INSERT INTO accountdetails1 (Username, MobileNumber, Email, Passwrd, Role) "
             "VALUES (?, ?, ?, ?, ?)",
             (username, mobile_number, email, password, role)
         )
@@ -643,7 +643,7 @@ def login():
 
         # Execute the SQL query to retrieve user details based on mobile number and password
         cursor.execute(
-            "SELECT * FROM accountdetails WHERE MobileNumber=? AND Passwrd=?",
+            "SELECT * FROM accountdetails1 WHERE MobileNumber=? AND Passwrd=?",
             (mobile_number, password)
         )
         row = cursor.fetchone()
