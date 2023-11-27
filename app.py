@@ -351,6 +351,7 @@ app.config['MAIL_DEFAULT_SENDER'] = 'confirmation@yellowsense.in'
 mail = Mail(app)
 
 @app.route('/confirm_nanny_booking', methods=['POST'])
+@cross_origin()
 def confirm_nanny_booking():
     try:
         booking_details = request.json  # Assuming the data is sent as JSON in the request body
@@ -406,6 +407,7 @@ def send_confirmation_email(
     mail.send(msg)
 
 @app.route('/confirm_maid_booking', methods=['POST'])
+@cross_origin()
 def confirm_maid_booking():
     try:
         booking_details = request.json  # Assuming the data is sent as JSON in the request body
@@ -462,6 +464,7 @@ def send_maid_confirmation_email(
     mail.send(msg)
 
 @app.route('/confirm_cook_booking', methods=['POST'])
+@cross_origin()
 def confirm_cook_booking():
     try:
         booking_details = request.json  # Assuming the data is sent as JSON in the request body
@@ -584,6 +587,7 @@ def login():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/book_and_get_details', methods=['POST'])
+@cross_origin()
 def book_and_get_details():
     cursor = conn.cursor()
 
