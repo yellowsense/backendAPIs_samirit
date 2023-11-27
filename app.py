@@ -604,10 +604,10 @@ def signin():
         password = data.get('Passwrd')
         role = data.get('Role')
 
-        # Check if the user already exists
+        # Check if the user already exists based on mobile number and password
         cursor.execute(
-            "SELECT * FROM accountdetails WHERE Username=? OR MobileNumber=? OR Email=?",
-            (username, mobile_number, email)
+            "SELECT * FROM accountdetails WHERE MobileNumber=? AND Passwrd=?",
+            (mobile_number, password)
         )
         existing_user = cursor.fetchone()
 
