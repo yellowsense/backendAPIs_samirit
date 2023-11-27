@@ -592,6 +592,7 @@ def send_cook_confirmation_email(
     msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
 
+
 @app.route('/signin', methods=['POST'])
 @cross_origin()
 def signin():
@@ -629,6 +630,7 @@ def signin():
         app.logger.error(str(e))
         # Return an error message with status code 500
         return jsonify({"error": "Internal Server Error"}), 500
+
 
 @app.route('/login', methods=['POST'])
 @cross_origin()
