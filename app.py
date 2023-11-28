@@ -308,37 +308,7 @@ def get_all_booking_details():
     except pyodbc.Error as e:
         app.logger.error("An error occurred: %s", str(e))
         return jsonify({"error": str(e)})
-@app.route('/edit_user', methods=['PUT'])
-@cross_origin()
-def edit_user():
-    try:
-        # Extract parameters from the JSON body for PUT requests
-        data = request.json
-        user_mobile_number = data.get('user_mobile_number')
-        new_name = data.get('new_name')
-        new_mobile_number = data.get('new_mobile_number')
-        new_email = data.get('new_email')
 
-        # Check if the user with the given mobile number exists
-        cursor.execute('SELECT * FROM accountdetails WHERE MobileNumber = ?', (user_mobile_number,))
-        user = cursor.fetchone()
-
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-
-        # Update the user profile based on the mobile number
-        cursor.execute(
-            "UPDATE accountdetails SET Username = ?, MobileNumber = ?, Email = ? WHERE MobileNumber = ?",
-            (new_name, new_mobile_number, new_email, user_mobile_number)
-        )
-        conn.commit()
-
-        # Return a success message
-        return jsonify({"message": "User profile updated successfully"})
-    except Exception as e:
-        # Log the error and return an error message in case of an exception
-        app.logger.error(str(e))
-        return jsonify({"error": "Internal Server Error"}), 500
 
 # Flask-Mail configuration
 app.config['MAIL_SERVER'] = 'smtp.hostinger.com'
@@ -658,6 +628,73 @@ def book_and_get_details():
         return jsonify({"error": "Internal Server Error"}), 500
     finally:
         cursor.close()
+
+@app.route('/edit_user', methods=['PUT'])
+@cross_origin()
+def edit_user():
+    try:
+        # Extract parameters from the JSON body for PUT requests
+        data = request.json
+        user_mobile_number = data.get('user_mobile_number')
+        new_name = data.get('new_name')
+        new_mobile_number = data.get('new_mobile_number')
+        new_email = data.get('new_email')
+
+        # Check if the user with the given mobile number exists
+        cursor.execute('SELECT * FROM accountdetails WHERE MobileNumber = ?', (user_mobile_number,))
+        user = cursor.fetchone()
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        # Begin the transaction
+        cursor.execute("BEGIN TRANSACTION;")
+
+        # Update the related records in the "BookingDetails" table
+        if new_mobile_number is not None:
+            cursor.execute(
+                "UPDATE BookingDetails SET customer_mobile_number = ? WHERE customer_mobile_number = ?",
+                (new_mobile_number, user_mobile_number)
+            )
+            conn.commit()
+
+        # Update the user profile based on the mobile number
+        update_query = "UPDATE accountdetails SET"
+        update_params = []
+
+        if new_name is not None:
+            update_query += " Username = ?,"
+            update_params.append(new_name)
+
+        if new_mobile_number is not None:
+            update_query += " MobileNumber = ?,"
+            update_params.append(new_mobile_number)
+
+        if new_email is not None:
+            update_query += " Email = ?,"
+            update_params.append(new_email)
+
+        # Remove the trailing comma if there are updates
+        if update_params:
+            update_query = update_query.rstrip(',')
+            update_query += " WHERE MobileNumber = ?"
+            update_params.append(user_mobile_number)
+
+            cursor.execute(update_query, tuple(update_params))
+            conn.commit()
+
+        # Commit the transaction
+        cursor.execute("COMMIT TRANSACTION;")
+
+        # Return a success message
+        return jsonify({"message": "User profile updated successfully"})
+    except Exception as e:
+        # Rollback the transaction in case of an exception
+        cursor.execute("ROLLBACK TRANSACTION;")
+        
+        # Log the error and return an error message
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
 
 
 
