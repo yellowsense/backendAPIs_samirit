@@ -133,103 +133,6 @@ def get_maid_details(maid_id):
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
 
-
-def parse_time_string(time_str):
-    try:
-        start_str, end_str = time_str.split('-')
-        start_time = parser.parse(start_str).time()
-        end_time = parser.parse(end_str).time()
-
-        # Check if end_time is less than start_time, indicating spanning two days
-        if end_time < start_time:
-            # Increment the day for end_time using timedelta
-            end_time = (datetime.combine(datetime.min, end_time) + timedelta(days=1)).time()
-
-        return start_time, end_time
-    except ValueError:
-        return None, None
-
-def find_matching_service_providers(Locations, Services, start_time_str):
-    try:
-        cursor.execute("SELECT ID, Name, Gender, Services, Locations, Timings FROM maidreg")
-        rows = cursor.fetchall()
-
-        start_time = parser.parse(f'1900-01-01 {start_time_str}').time()
-        if start_time is None:
-            app.logger.error("Invalid start_time format: %s", start_time_str)
-            return {"error": "Invalid start_time format"}
-
-        matching_providers = []
-        for row in rows:
-            services = [service.strip("' ") for service in row.Services.split(',')] if row.Services else []
-            locations = [location.strip("' ") for location in row.Locations.split(',')] if row.Locations else []
-            timings = [timing.strip("' ") for timing in row.Timings.split(',')] if row.Timings else []
-
-            # Check if the specified location is in the provider's list of locations
-            if isinstance(locations, list) and locations is not None:
-                # Update: Case-insensitive and whitespace-insensitive comparison
-                if any(Locations.strip().lower() in loc.strip("' ").lower() for loc in locations):
-                    # Check if the specified service is in the provider's list of services
-                    if Services.lower() in [serv.strip().lower() for serv in services]:
-                        # Check if Timings is a valid list
-                        if isinstance(timings, list) and timings is not None:
-                            for timing_range in timings:
-                                start_range, end_range = parse_time_string(timing_range)
-
-                                if start_range is None or end_range is None:
-                                    app.logger.error("Invalid timing format in provider %s: %s", row.ID, timing_range)
-                                    continue
-
-                                # Check if start_time is within the current timing_range
-                                if start_range <= start_time < end_range:
-                                    matching_providers.append({
-                                        "ID": row.ID,
-                                        "Name": row.Name,
-                                        "Gender": row.Gender,
-                                        "Services": services,
-                                        "Locations": locations,
-                                        "Timings": timings
-                                    })
-                                    break  # Break from the inner loop once a match is found for this provider
-                        else:
-                            app.logger.error("Invalid Timings format in provider %s: %s", row.ID, timings)
-
-        return matching_providers
-
-    except pyodbc.Error as e:
-        app.logger.error("Error querying service providers: %s", e)
-        return {"error": "Error querying service providers"}
-
-
-
-@app.route('/get_matching_service_providers', methods=['GET', 'POST'])
-@cross_origin()
-def get_matching_providers():
-    if request.method == 'GET':
-        Locations = request.args.get('Locations')
-        Services = request.args.get('Services')
-        date = request.args.get('date')
-        start_time = request.args.get('start_time')
-    elif request.method == 'POST':
-        data = request.json
-        Locations = data.get('Locations')
-        Services = data.get('Services')
-        date = data.get('date')
-        start_time = data.get('start_time')
-    else:
-        return jsonify({"error": "Unsupported method"})
-
-    if not Locations or not Services or not date or not start_time:
-        return jsonify({"error": "Missing parameters"})
-
-    matching_providers = find_matching_service_providers(Locations, Services, start_time)
-
-    if matching_providers:
-        return jsonify({"providers": matching_providers})
-    else:
-        return jsonify({"providers": "No matching service providers found"})
-
-
 @app.route('/add_payment', methods=['POST'])
 @cross_origin()
 def add_payment():
@@ -694,6 +597,102 @@ def edit_user():
         # Log the error and return an error message
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
+
+def parse_time_string(time_str):
+    try:
+        start_str, end_str = time_str.split('-')
+        start_time = parser.parse(start_str).time()
+        end_time = parser.parse(end_str).time()
+
+        # Check if end_time is less than start_time, indicating spanning two days
+        if end_time < start_time:
+            # Increment the day for end_time using timedelta
+            end_time = (datetime.combine(datetime.min, end_time) + timedelta(days=1)).time()
+
+        return start_time, end_time
+    except ValueError:
+        return None, None
+
+def find_matching_service_providers(Locations, Services, start_time_str):
+    try:
+        cursor.execute("SELECT ID, Name, Gender, Services, Locations, Timings FROM maidreg")
+        rows = cursor.fetchall()
+
+        start_time = parser.parse(f'1900-01-01 {start_time_str}').time()
+        if start_time is None:
+            app.logger.error("Invalid start_time format: %s", start_time_str)
+            return {"error": "Invalid start_time format"}
+
+        matching_providers = []
+        for row in rows:
+            services = [service.strip("' ") for service in row.Services.split(',')] if row.Services else []
+            locations = [location.strip("' ") for location in row.Locations.split(',')] if row.Locations else []
+            timings = [timing.strip("' ") for timing in row.Timings.split(',')] if row.Timings else []
+
+            # Check if the specified location is in the provider's list of locations
+            if isinstance(locations, list) and locations is not None:
+                # Update: Case-insensitive and whitespace-insensitive comparison
+                if any(Locations.strip().lower() in loc.strip("' ").lower() for loc in locations):
+                    # Check if the specified service is in the provider's list of services
+                    if Services.lower() in [serv.strip().lower() for serv in services]:
+                        # Check if Timings is a valid list
+                        if isinstance(timings, list) and timings is not None:
+                            for timing_range in timings:
+                                start_range, end_range = parse_time_string(timing_range)
+
+                                if start_range is None or end_range is None:
+                                    app.logger.error("Invalid timing format in provider %s: %s", row.ID, timing_range)
+                                    continue
+
+                                # Check if start_time is within the current timing_range
+                                if start_range <= start_time < end_range:
+                                    matching_providers.append({
+                                        "ID": row.ID,
+                                        "Name": row.Name,
+                                        "Gender": row.Gender,
+                                        "Services": services,
+                                        "Locations": locations,
+                                        "Timings": timings
+                                    })
+                                    break  # Break from the inner loop once a match is found for this provider
+                        else:
+                            app.logger.error("Invalid Timings format in provider %s: %s", row.ID, timings)
+
+        return matching_providers
+
+    except pyodbc.Error as e:
+        app.logger.error("Error querying service providers: %s", e)
+        return {"error": "Error querying service providers"}
+
+
+
+@app.route('/get_matching_service_providers', methods=['GET', 'POST'])
+@cross_origin()
+def get_matching_providers():
+    if request.method == 'GET':
+        Locations = request.args.get('Locations')
+        Services = request.args.get('Services')
+        date = request.args.get('date')
+        start_time = request.args.get('start_time')
+    elif request.method == 'POST':
+        data = request.json
+        Locations = data.get('Locations')
+        Services = data.get('Services')
+        date = data.get('date')
+        start_time = data.get('start_time')
+    else:
+        return jsonify({"error": "Unsupported method"})
+
+    if not Locations or not Services or not date or not start_time:
+        return jsonify({"error": "Missing parameters"})
+
+    matching_providers = find_matching_service_providers(Locations, Services, start_time)
+
+    if matching_providers:
+        return jsonify({"providers": matching_providers})
+    else:
+        return jsonify({"providers": "No matching service providers found"})
+
 
 
 
