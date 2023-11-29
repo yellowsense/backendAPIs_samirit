@@ -665,9 +665,6 @@ def find_matching_service_providers(locations, services, start_time_str):
         app.logger.error("Error querying service providers: %s", e)
         return {"error": "Error querying service providers"}
    
-
-
-
 @app.route('/get_matching_service_providers', methods=['GET', 'POST'])
 @cross_origin()
 def get_matching_providers():
@@ -694,10 +691,6 @@ def get_matching_providers():
         return jsonify({"providers": matching_providers})
     else:
         return jsonify({"providers": "No matching service providers found"})
-
-
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
