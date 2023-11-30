@@ -28,7 +28,7 @@ except pyodbc.Error as e:
 @app.after_request
 def add_headers(response):
     response.headers['Access-Control-Allow-Origin'] = 'https://yellowsense.in'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     return response
 
@@ -691,6 +691,156 @@ def get_matching_providers():
         return jsonify({"providers": matching_providers})
     else:
         return jsonify({"providers": "No matching service providers found"})
+
+@app.route('/delete_maid_by_mobile', methods=['DELETE'])
+@cross_origin()
+def delete_maid_by_mobile():
+    try:
+        # Extract the mobile number from the request parameters
+        mobile_number = request.args.get('mobile_number')
+
+        # Check if the mobile number is provided
+        if not mobile_number:
+            return jsonify({"error": "Missing mobile_number parameter"}), 400
+
+        # Check if the maid with the given mobile number exists
+        cursor.execute('SELECT * FROM maidreg WHERE PhoneNumber = ?', (mobile_number,))
+        maid = cursor.fetchone()
+
+        if not maid:
+            return jsonify({"error": "Maid not found"}), 404
+
+        # Delete the maid record
+        cursor.execute('DELETE FROM maidreg WHERE PhoneNumber = ?', (mobile_number,))
+        conn.commit()
+
+        return jsonify({"message": "Maid deleted successfully"})
+    except Exception as e:
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
+    
+
+@app.route('/update_maid_by_mobile', methods=['PUT'])
+@cross_origin()
+def update_maid_by_mobile():
+    try:
+        data = request.json
+        name = data.get('name')
+        services = data.get('services')
+        locations = data.get('locations')
+        phone_number = data.get('phone_number')
+        timings = data.get('timings')
+        aadhar_number = data.get('aadhar_number')
+        rating = data.get('rating')
+        languages = data.get('languages')
+        second_category = data.get('second_category')
+        region = data.get('region')
+        description = data.get('description')
+        sunday_availability = data.get('sunday_availability')
+        years_of_experience = data.get('years_of_experience')
+        gender = data.get('gender') 
+
+        # Check if the maid with the given phone number exists
+        cursor.execute('SELECT * FROM maidreg WHERE PhoneNumber = ?', (phone_number,))
+        maid = cursor.fetchone()
+
+        if not maid:
+            return jsonify({"error": "Maid not found"}), 404
+
+        # Begin the transaction
+        cursor.execute("BEGIN TRANSACTION;")
+
+        # Update the related records in the "BookingDetails" table
+        if phone_number is not None:
+            cursor.execute(
+                "UPDATE BookingDetails SET provider_mobile_number = ? WHERE provider_mobile_number = ?",
+                (phone_number, phone_number)
+            )
+            conn.commit()
+
+        # Update the maid profile based on the phone number
+        update_query = "UPDATE maidreg SET"
+        update_params = []
+
+        if name is not None:
+            update_query += " Name = ?,"
+            update_params.append(name)
+
+        if services is not None:
+            update_query += " Services = ?,"
+            update_params.append(services)
+
+        if locations is not None:
+            update_query += " Locations = ?,"
+            update_params.append(locations)
+
+        if phone_number is not None:
+            update_query += " PhoneNumber = ?,"
+            update_params.append(phone_number)
+
+        if timings is not None:
+            update_query += " Timings = ?,"
+            update_params.append(timings)
+
+        if aadhar_number is not None:
+            update_query += " AadharNumber = ?,"
+            update_params.append(aadhar_number)
+
+        if rating is not None:
+            update_query += " RATING = ?,"
+            update_params.append(rating)
+
+        if languages is not None:
+            update_query += " languages = ?,"
+            update_params.append(languages)
+
+        if second_category is not None:
+            update_query += " second_category = ?,"
+            update_params.append(second_category)
+
+        if region is not None:
+            update_query += " Region = ?,"
+            update_params.append(region)
+
+        if description is not None:
+            update_query += " description = ?,"
+            update_params.append(description)
+
+        if sunday_availability is not None:
+            update_query += " Sunday_availability = ?,"
+            update_params.append(sunday_availability)
+
+        if years_of_experience is not None:
+            update_query += " years_of_experience = ?,"
+            update_params.append(years_of_experience)
+
+        if gender is not None:
+            update_query += " Gender = ?,"
+            update_params.append(gender)
+
+        # Remove the trailing comma if there are updates
+        if update_params:
+            update_query = update_query.rstrip(',')
+            update_query += " WHERE PhoneNumber = ?"
+            update_params.append(phone_number)
+
+            cursor.execute(update_query, tuple(update_params))
+            conn.commit()
+
+        # Commit the transaction
+        cursor.execute("COMMIT TRANSACTION;")
+
+        # Return a success message
+        return jsonify({"message": "Maid profile updated successfully"})
+    except Exception as e:
+        # Rollback the transaction in case of an exception
+        cursor.execute("ROLLBACK TRANSACTION;")
+
+        # Log the error and return an error message
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
+    finally:
+        cursor.close()
 
 if __name__ == '__main__':
     app.run(debug=True)
