@@ -884,6 +884,36 @@ def get_customer_details():
     except Exception as e:
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
+
+@app.route('/get_customer/<string:mobile_number>', methods=['GET'])
+@cross_origin()
+def customer_details(mobile_number):
+    try:
+
+        # SQL query to retrieve customer details excluding the password
+        query = f"SELECT UserID, Username, MobileNumber, Email FROM accountdetails WHERE MobileNumber = '{mobile_number}'"
+        
+        # Execute the query
+        cursor.execute(query)
+        
+        # Fetch the results
+        customer_details = cursor.fetchone()
+
+        if customer_details:
+            # Convert results to a dictionary for JSON response
+            result = {
+                'UserID': customer_details[0],
+                'Username': customer_details[1],
+                'MobileNumber': customer_details[2],
+                'Email': customer_details[3]
+            }
+            return jsonify(result)
+        else:
+            return jsonify({'message': 'Customer not found'}), 404
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
     
 
 if __name__ == '__main__':
