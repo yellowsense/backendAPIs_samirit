@@ -838,7 +838,52 @@ def update_maid_by_mobile():
         # Log the error and return an error message
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
+@app.route('/get_customer_details', methods=['GET'])
+@cross_origin()
+def get_customer_details():
+    try:
+        # Extract the mobile number from the request parameters
+        mobile_number = request.args.get('mobile_number')
 
+        # Check if the mobile number is provided
+        if not mobile_number:
+            return jsonify({"error": "Missing mobile_number parameter"}), 400
+
+        # Retrieve customer details based on mobile number from BookingDetails
+        cursor.execute('SELECT * FROM BookingDetails WHERE customer_mobile_number = ?', (mobile_number,))
+        booking_details = cursor.fetchone()
+
+        if not booking_details:
+            return jsonify({"error": "Customer not found in BookingDetails"}), 404
+
+        # Retrieve additional details from AccountDetails using the mobile number
+        cursor.execute('SELECT * FROM AccountDetails WHERE MobileNumber = ?', (mobile_number,))
+        account_details = cursor.fetchone()
+
+        if not account_details:
+            return jsonify({"error": "Customer account details not found"}), 404
+
+        # Combine both sets of details and return the response
+        customer_details = {
+            "booking_details": {
+                "customer_mobile_number": booking_details.customer_mobile_number,
+                "provider_mobile_number":booking_details.provider_mobile_number,
+                "id":booking_details.id,
+                # Add other booking details as needed
+            },
+            "account_details": {
+                "Username": account_details.Username,
+                "MobileNumber": account_details.MobileNumber,
+                "Email": account_details.Email,
+                # Add other account details as needed
+            }
+        }
+
+        return jsonify(customer_details)
+    except Exception as e:
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
+    
 
 if __name__ == '__main__':
     app.run(debug=True)
