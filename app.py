@@ -838,6 +838,7 @@ def update_maid_by_mobile():
         # Log the error and return an error message
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
+
 @app.route('/get_customer_details', methods=['GET'])
 @cross_origin()
 def get_customer_details():
