@@ -959,9 +959,7 @@ def confirm_booking():
             conn.commit()
             return jsonify({'message': 'Booking rejected'})
     else:
-        return jsonify({'message': 'Booking not found or already processed'})
-
-    
+        return jsonify({'message': 'Booking not found or already processed'})    
 
 if __name__ == '__main__':
     app.run(debug=True)
