@@ -914,6 +914,53 @@ def customer_details(mobile_number):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/serviceprovider/confirm', methods=['POST'])
+def confirm_booking():
+    data = request.get_json()
+
+    provider_mobile = data.get('provider_mobile')
+    action = data.get('action')
+
+    # Execute raw SQL query to fetch the booking
+    sql_query = f"SELECT TOP 1 * FROM BookingDetails WHERE provider_mobile_number = '{provider_mobile}' AND (status IS NULL OR status = 'pending');" 
+    cursor.execute(sql_query)
+    booking = cursor.fetchone()
+    if booking:
+        if action == 'accept':
+            # Execute raw SQL query to update the booking status
+            update_query = f"UPDATE BookingDetails SET status = 'accepted' WHERE id = {booking.id};"
+            cursor.execute(update_query)
+            provider_details_query = f"SELECT * FROM maidreg WHERE PhoneNumber = '{provider_mobile}';"
+            cursor.execute(provider_details_query)
+            provider_details = cursor.fetchone()
+
+            conn.commit()  # Commit the changes to the database
+
+            if provider_details:
+                    # Return booking confirmation message along with provider details
+                response = {
+                    'message': 'Booking confirmed',
+                    'provider_details': {
+                        'name': provider_details.Name,
+                        'gender': provider_details.Gender,
+                        'phone_number': provider_details.PhoneNumber,
+                        'services': provider_details.Services,
+                        'locations': provider_details.Locations,
+                        'timings': provider_details.Timings
+                        }
+                    }
+                return jsonify(response)
+            else:
+                return jsonify({'message': 'Provider details not found'})
+        elif action == 'reject':
+            # Execute raw SQL query to update the booking status
+            update_query = f"UPDATE BookingDetails SET status = 'rejected' WHERE id = {booking.id};"
+            cursor.execute(update_query)
+            conn.commit()
+            return jsonify({'message': 'Booking rejected'})
+    else:
+        return jsonify({'message': 'Booking not found or already processed'})
+
     
 
 if __name__ == '__main__':
