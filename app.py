@@ -961,6 +961,5 @@ def confirm_booking():
     else:
         return jsonify({'message': 'Booking not found or already processed'})
  
-
 if __name__ == '__main__':
     app.run(debug=True)
