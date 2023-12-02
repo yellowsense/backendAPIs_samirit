@@ -960,34 +960,6 @@ def confirm_booking():
             return jsonify({'message': 'Booking rejected'})
     else:
         return jsonify({'message': 'Booking not found or already processed'})
-
-@app.route('/customer-booking-details/<customer_mobile_number>', methods=['GET'])
-def get_customer_booking_details(customer_mobile_number):
-    # Query booking details for a specific customer
-    booking_sql_query = f"SELECT * FROM BookingDetails WHERE customer_mobile_number = '{customer_mobile_number}'"
-    cursor.execute(booking_sql_query)
-    booking_details = cursor.fetchall()
-
-    # Convert the query result to a list of dictionaries for JSON response
-    booking_details_list = [dict(zip([column[0] for column in cursor.description], row)) for row in booking_details]
-
-    if not booking_details_list:
-        return jsonify({'message': 'No booking details found for the customer'}), 404
-
-    # Get provider details for each booking using a separate SQL query
-    provider_details_list = []
-    for booking in booking_details_list:
-        provider_mobile_number = booking['provider_mobile_number']
-        provider_sql_query = f"SELECT * FROM MaidReg WHERE PhoneNumber = '{provider_mobile_number}'"
-        cursor.execute(provider_sql_query)
-        provider_details = cursor.fetchone()
-
-        if provider_details:
-            provider_details_dict = dict(zip([column[0] for column in cursor.description], provider_details))
-            provider_details_dict[' booking id'] = booking['id']
-            provider_details_list.append(provider_details_dict)
-
-    return jsonify({ 'provider_details': provider_details_list})
  
 if __name__ == '__main__':
     app.run(debug=True)
