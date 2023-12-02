@@ -960,7 +960,9 @@ def confirm_booking():
             return jsonify({'message': 'Booking rejected'})
     else:
         return jsonify({'message': 'Booking not found or already processed'})
+
 @app.route('/customer-booking-details/<customer_mobile_number>', methods=['GET'])
+@cross_origin()
 def get_customer_booking_details(customer_mobile_number):
     # Query booking details for a specific customer
     booking_sql_query = f"SELECT * FROM BookingDetails WHERE customer_mobile_number = '{customer_mobile_number}'"
@@ -987,5 +989,6 @@ def get_customer_booking_details(customer_mobile_number):
             provider_details_list.append(provider_details_dict)
 
     return jsonify({ 'provider_details': provider_details_list})
+
 if __name__ == '__main__':
     app.run(debug=True)
