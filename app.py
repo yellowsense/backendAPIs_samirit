@@ -431,7 +431,6 @@ def signin():
         # Return an error message with status code 500
         return jsonify({"error": "Internal Server Error"}), 500
 
-
 @app.route('/login', methods=['POST'])
 @cross_origin()
 def login():
