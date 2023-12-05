@@ -1093,5 +1093,24 @@ def book_now():
     else:
         return jsonify({'message': 'Provider not found!'}), 404
 
+from flask import jsonify
+
+@app.route('/all-booking-details', methods=['GET'])
+@cross_origin()
+def get_all_booking_details():
+    # Query all booking details
+    booking_sql_query = "SELECT * FROM BookingDetails"
+    cursor.execute(booking_sql_query)
+    booking_details = cursor.fetchall()
+
+    # Convert the query result to a list of dictionaries for JSON response
+    booking_details_list = [dict(zip([column[0] for column in cursor.description], row)) for row in booking_details]
+
+    if not booking_details_list:
+        return jsonify({'message': 'No booking details found'}), 404
+
+    return jsonify({'booking_details': booking_details_list})
+
+
 if __name__ == '__main__':
     app.run(debug=True)
