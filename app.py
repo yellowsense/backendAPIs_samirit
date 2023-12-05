@@ -196,22 +196,6 @@ def get_payment_details_by_mobile_number(mobile_number):
 def row_to_dict(row, columns):
     return {columns[i]: row[i] for i in range(len(columns))}
 
-@app.route('/get_all_booking_details', methods=['GET'])
-@cross_origin()
-def get_all_booking_details():
-    try:
-        cursor.execute("SELECT * FROM BookingDetails")
-        rows = cursor.fetchall()
-
-        columns = [column[0] for column in cursor.description]
-        booking_details_list = [row_to_dict(row, columns) for row in rows]
-
-        return jsonify({"booking_details": booking_details_list})
-    except pyodbc.Error as e:
-        app.logger.error("An error occurred: %s", str(e))
-        return jsonify({"error": str(e)})
-
-
 # Flask-Mail configuration
 app.config['MAIL_SERVER'] = 'smtp.hostinger.com'
 app.config['MAIL_PORT'] = 465
