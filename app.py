@@ -403,8 +403,6 @@ def send_cook_confirmation_email(
     msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
 
-
-
 @app.route('/signin', methods=['POST'])
 @cross_origin()
 def signin():
