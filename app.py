@@ -748,30 +748,35 @@ def update_maid_by_mobile():
         description = data.get('description')
         sunday_availability = data.get('sunday_availability')
         years_of_experience = data.get('years_of_experience')
-
-        
+        age = data.get('age')
+        gender=data.get('gender')
+        pan_card=data.get('pan_card')
 
         # Check if the user with the given mobile number exists
         cursor.execute('SELECT * FROM maidreg WHERE PhoneNumber = ?', (user_mobile_number,))
         user = cursor.fetchone()
+        print(f"user: {user}")
 
         if not user:
-            return jsonify({"error": "User not found"}), 404
+            print(f"User not found in maidreg table for mobile number: {user_mobile_number}")
+            return jsonify({"error": "User not found in maidreg table"}), 404
 
         # Begin the transaction
         cursor.execute("BEGIN TRANSACTION;")
+        cursor.execute('SELECT * FROM accountdetails WHERE MobileNumber = ?', (user_mobile_number,))
+        user_in_accountdetails = cursor.fetchone()
+        print(f"user_in_accountdetails: {user_in_accountdetails}")
 
-        # Update the related records in the "BookingDetails" table
-        if new_mobile_number is not None:
-            cursor.execute(
-                "UPDATE BookingDetails SET provider_mobile_number = ? WHERE provider_mobile_number = ?",
-                (new_mobile_number, user_mobile_number)
-            )
-            conn.commit()
+        cursor.execute("BEGIN TRANSACTION;")
+
 
         # Update the user profile based on the mobile number
         update_query = "UPDATE maidreg SET"
         update_params = []
+
+        update_query_accountdetails = "UPDATE accountdetails SET"
+        update_params_accountdetails = []
+
 
         if new_mobile_number is not None:
             update_query += " PhoneNumber = ?,"
@@ -825,6 +830,47 @@ def update_maid_by_mobile():
             update_query += " years_of_experience = ?,"
             update_params.append(data['years_of_experience']) 
 
+        if age is not None:
+            update_query += " age = ?,"
+            update_params.append(data['age'])
+
+        if gender is not None:
+            update_query += " Gender = ?,"
+            update_params.append(data['gender'])
+        
+        if pan_card is not None:
+            update_query += " pancardnumber = ?,"
+            update_params.append(data['pan_card'])
+
+        if name is not None:
+            update_query_accountdetails += " Username = ?,"
+            update_params_accountdetails.append(data['name'])
+
+        if new_mobile_number is not None:
+            update_query_accountdetails += " MobileNumber = ?,"
+            update_params_accountdetails.append(new_mobile_number)
+
+        if aadhar_number is not None:
+            update_query_accountdetails += " AadharCard = ?,"
+            update_params_accountdetails.append(data['aadhar_number'])
+
+        if pan_card is not None:
+            update_query_accountdetails += " PanCardNumber = ?,"
+            update_params_accountdetails.append(data['pan_card'])
+
+        if age is not None:
+            update_query_accountdetails += " Age = ?,"
+            update_params_accountdetails.append(data['age'])
+
+        if gender is not None:
+            update_query_accountdetails += " Gender = ?,"
+            update_params_accountdetails.append(data['gender'])
+
+        if services is not None:
+            update_query_accountdetails+= " Services = ?,"
+            update_params_accountdetails.append(data['services'])
+
+        
 
         # Remove the trailing comma if there are updates
         if update_params:
@@ -834,17 +880,37 @@ def update_maid_by_mobile():
 
             cursor.execute(update_query, tuple(update_params))
             conn.commit()
+        if update_params_accountdetails:
+            update_query_accountdetails = update_query_accountdetails.rstrip(',')
+            update_query_accountdetails += " WHERE MobileNumber = ?"
+            update_params_accountdetails.append(user_mobile_number)
+
+            cursor.execute(update_query_accountdetails, tuple(update_params_accountdetails))
+            conn.commit()
+
+        cursor.execute(update_query_accountdetails, tuple(update_params_accountdetails))
+        conn.commit()
+
+        if name is not None and new_mobile_number is not None:
+            cursor.execute(
+                "UPDATE ServiceBookings SET provider_name = ?, provider_phone_number = ? WHERE provider_phone_number = ?",
+                (name, new_mobile_number, user_mobile_number)
+            )
+            conn.commit()
 
         # Commit the transaction
         cursor.execute("COMMIT TRANSACTION;")
 
         # Return a success message
         return jsonify({"message": "User profile updated successfully"})
+    except pyodbc.IntegrityError as e:
+        # Rollback the transaction in case of a primary key violation
+        cursor.execute("ROLLBACK TRANSACTION;")
+        app.logger.error(str(e))
+        return jsonify({"error": "Duplicate phone number in maidreg or accountdetails table"}), 500
     except Exception as e:
         # Rollback the transaction in case of an exception
         cursor.execute("ROLLBACK TRANSACTION;")
-        
-        # Log the error and return an error message
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
