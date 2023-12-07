@@ -1077,7 +1077,74 @@ def book_now():
     else:
         return jsonify({'message': 'Provider not found!'}), 404
 
-from flask import jsonify
+@app.route('/update_account', methods=['PUT'])
+@cross_origin()
+def update_account():
+    data = request.get_json()
+
+    phone_number = data.get('phone_number')
+    name = data.get('name')
+    age = data.get('age')
+    gender = data.get('gender')
+    services = data.get('services')
+    aadhar_number = data.get('aadhar_number')
+    pan_card = data.get('pan_card')
+
+    # Update the values in the accountdetails table
+    account_query = "UPDATE accountdetails SET"
+    if name is not None:
+        account_query += f" Username='{name}',"
+    if age is not None:
+        account_query += f" Age={age},"
+    if gender is not None:
+        account_query += f" Gender='{gender}',"
+    if services is not None:
+        services = services.replace("'", "''")
+        account_query += f" Services='{services}',"
+    if aadhar_number is not None:
+        account_query += f" AadharCard='{aadhar_number}',"
+    if pan_card is not None:
+        account_query += f" PanCardNumber='{pan_card}',"
+
+    # Remove the trailing comma and complete the query
+    account_query = account_query.rstrip(',') + f" WHERE MobileNumber ='{phone_number}'"
+
+    # Update the values in the maidreg table
+    maid_query = "UPDATE maidreg SET"
+    if name is not None:
+        maid_query += f" Name='{name}',"
+    if age is not None:
+        maid_query += f" age={age},"
+    if gender is not None:
+        maid_query += f" Gender='{gender}',"
+    if services is not None:
+        services = services.replace("'", "''")
+        maid_query += f" Services='{services}',"
+    if aadhar_number is not None:
+        maid_query += f" AadharNumber='{aadhar_number}',"
+    if pan_card is not None:
+        maid_query += f" pancardnumber='{pan_card}',"
+
+    # Remove the trailing comma and complete the query
+    maid_query = maid_query.rstrip(',') + f" WHERE PhoneNumber='{phone_number}'"
+
+    booking_query = "UPDATE BookingDetails SET"
+    if name is not None:
+        booking_query += f" Provider_name='{name}',"
+    if services is not None:
+        # Handle Services as a string, properly escaping single quotes
+        services = services.replace("'", "''")
+        booking_query += f" Services='{services}',"
+            # Remove the trailing comma and complete the query
+    booking_query = booking_query.rstrip(',') + f" WHERE provider_mobile_number='{phone_number}'"
+    
+    try:
+        cursor.execute(account_query)
+        cursor.execute(maid_query)
+        conn.commit()
+        return jsonify({'message': 'Profile data is  updated successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # #@app.route('/all-booking-details', methods=['GET'])
 # #@cross_origin()
