@@ -623,7 +623,6 @@ def parse_time_string(time_str):
         return None, None
 
 def find_matching_service_providers(locations, services, start_time_str):
-
     try:
         cursor.execute("""
             SELECT ID, Name, Gender, Services, Locations, Timings
