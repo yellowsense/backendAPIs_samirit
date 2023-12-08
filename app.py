@@ -727,9 +727,7 @@ def update_maid_by_mobile():
 
         if services is not None:
             update_query_accountdetails+= " Services = ?,"
-            update_params_accountdetails.append(data['services'])
-
-        
+            update_params_accountdetails.append(data['services'])        
 
         # Remove the trailing comma if there are updates
         if update_params:
