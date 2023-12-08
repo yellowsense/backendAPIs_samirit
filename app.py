@@ -467,74 +467,6 @@ def login():
         # Return an error response with a 500 status code (Internal Server Error)
         return jsonify({"error": str(e)}), 500
 
-
-@app.route('/edit_user', methods=['PUT'])
-@cross_origin()
-def edit_user():
-    try:
-        # Extract parameters from the JSON body for PUT requests
-        data = request.json
-        user_mobile_number = data.get('user_mobile_number')
-        new_name = data.get('new_name')
-        new_mobile_number = data.get('new_mobile_number')
-        new_email = data.get('new_email')
-
-        # Check if the user with the given mobile number exists
-        cursor.execute('SELECT * FROM accountdetails WHERE MobileNumber = ?', (user_mobile_number,))
-        user = cursor.fetchone()
-
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-
-        # Begin the transaction
-        cursor.execute("BEGIN TRANSACTION;")
-
-        # Update the related records in the "BookingDetails" table
-        if new_mobile_number is not None:
-            cursor.execute(
-                "UPDATE BookingDetails SET customer_mobile_number = ? WHERE customer_mobile_number = ?",
-                (new_mobile_number, user_mobile_number)
-            )
-            conn.commit()
-
-        # Update the user profile based on the mobile number
-        update_query = "UPDATE accountdetails SET"
-        update_params = []
-
-        if new_name is not None:
-            update_query += " Username = ?,"
-            update_params.append(new_name)
-
-        if new_mobile_number is not None:
-            update_query += " MobileNumber = ?,"
-            update_params.append(new_mobile_number)
-
-        if new_email is not None:
-            update_query += " Email = ?,"
-            update_params.append(new_email)
-
-        # Remove the trailing comma if there are updates
-        if update_params:
-            update_query = update_query.rstrip(',')
-            update_query += " WHERE MobileNumber = ?"
-            update_params.append(user_mobile_number)
-
-            cursor.execute(update_query, tuple(update_params))
-            conn.commit()
-
-        # Commit the transaction
-        cursor.execute("COMMIT TRANSACTION;")
-
-        # Return a success message
-        return jsonify({"message": "User profile updated successfully"})
-    except Exception as e:
-        # Rollback the transaction in case of an exception
-        cursor.execute("ROLLBACK TRANSACTION;")
-        
-        # Log the error and return an error message
-        app.logger.error(str(e))
-        return jsonify({"error": "Internal Server Error"}), 500
-
 def parse_time_string(time_str):
     try:
         start_str, end_str = time_str.split('-')
@@ -992,75 +924,6 @@ def get_customer_booking_details(customer_mobile_number):
 
     return jsonify({ 'provider_details': provider_details_list})
 
-@app.route('/update_account', methods=['PUT'])
-@cross_origin()
-def update_account():
-    data = request.get_json()
-
-    phone_number = data.get('phone_number')
-    name = data.get('name')
-    age = data.get('age')
-    gender = data.get('gender')
-    services = data.get('services')
-    aadhar_number = data.get('aadhar_number')
-    pan_card = data.get('pan_card')
-
-    # Update the values in the accountdetails table
-    account_query = "UPDATE accountdetails SET"
-    if name is not None:
-        account_query += f" Username='{name}',"
-    if age is not None:
-        account_query += f" Age={age},"
-    if gender is not None:
-        account_query += f" Gender='{gender}',"
-    if services is not None:
-        services = services.replace("'", "''")
-        account_query += f" Services='{services}',"
-    if aadhar_number is not None:
-        account_query += f" AadharCard='{aadhar_number}',"
-    if pan_card is not None:
-        account_query += f" PanCardNumber='{pan_card}',"
-
-    # Remove the trailing comma and complete the query
-    account_query = account_query.rstrip(',') + f" WHERE MobileNumber ='{phone_number}'"
-
-    # Update the values in the maidreg table
-    maid_query = "UPDATE maidreg SET"
-    if name is not None:
-        maid_query += f" Name='{name}',"
-    if age is not None:
-        maid_query += f" age={age},"
-    if gender is not None:
-        maid_query += f" Gender='{gender}',"
-    if services is not None:
-        services = services.replace("'", "''")
-        maid_query += f" Services='{services}',"
-    if aadhar_number is not None:
-        maid_query += f" AadharNumber='{aadhar_number}',"
-    if pan_card is not None:
-        maid_query += f" pancardnumber='{pan_card}',"
-
-    # Remove the trailing comma and complete the query
-    maid_query = maid_query.rstrip(',') + f" WHERE PhoneNumber='{phone_number}'"
-
-    booking_query = "UPDATE BookingDetails SET"
-    if name is not None:
-        booking_query += f" Provider_name='{name}',"
-    if services is not None:
-        # Handle Services as a string, properly escaping single quotes
-        services = services.replace("'", "''")
-        booking_query += f" Services='{services}',"
-            # Remove the trailing comma and complete the query
-    booking_query = booking_query.rstrip(',') + f" WHERE provider_mobile_number='{phone_number}'"
-    
-    try:
-        cursor.execute(account_query)
-        cursor.execute(maid_query)
-        conn.commit()
-        return jsonify({'message': 'Profile data is  updated successfully'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 def convert_date_format(date_str):
     try:
         # Try parsing as 'YYYY-MM-DD' format
@@ -1220,6 +1083,179 @@ def get_customer_maid_details():
         }), 200
     else:
         return jsonify({'message': 'Provider or Customer not found!'}), 404
+
+@app.route('/book_and_get_details', methods=['POST'])
+@cross_origin()
+def book_and_get_details():
+    cursor = conn.cursor()
+
+    try:
+        data = request.json
+        provider_mobile_number = data.get('provider_mobile_number')
+
+        # Check if the provider_mobile_number is valid
+        cursor.execute('SELECT * FROM maidreg WHERE PhoneNumber = ?', (provider_mobile_number,))
+        provider = cursor.fetchone()
+
+        if not provider:
+            return jsonify({"error": "Invalid service provider"}), 400
+
+        customer_mobile_number = data.get('customer_mobile_number')
+        status = data.get('status')  # New field for customer status
+
+        # Check if the status is valid (confirm or cancel)
+        if status not in ['confirm', 'cancel']:
+            return jsonify({"error": "Invalid customer status"}), 400
+
+        if status == 'cancel':
+            return jsonify({"message": "Booking canceled"})
+
+        # Get the username of the customer
+        cursor.execute('SELECT Username FROM accountdetails WHERE MobileNumber = ?', (customer_mobile_number,))
+        customer_username = cursor.fetchone().Username
+
+        # Get the name of the service provider
+        provider_name = provider.Name
+
+        # Insert into ServiceBookings and retrieve the last inserted ID
+        cursor.execute('INSERT INTO ServiceBookings (user_phone_number, provider_phone_number, customer_status, user_name, provider_name) OUTPUT INSERTED.id VALUES (?, ?, ?, ?, ?)', (customer_mobile_number, provider_mobile_number, status, customer_username, provider_name))
+        last_inserted_id = cursor.fetchone().id
+        conn.commit()
+
+        query = '''
+            SELECT
+                sb.id AS booking_id,
+                sb.user_name,
+                sb.provider_name,
+                sb.provider_phone_number,
+                sp.Services AS service_provider_services,
+                sp.Locations AS service_provider_locations,
+                ad.MobileNumber AS user_phone_number,
+                sb.customer_status
+            FROM
+                ServiceBookings sb
+                INNER JOIN maidreg sp ON sb.provider_phone_number = sp.PhoneNumber
+                INNER JOIN accountdetails ad ON sb.user_phone_number = ad.MobileNumber
+            WHERE
+                sb.id = ?
+        '''
+
+        cursor.execute(query, (last_inserted_id,))
+        row = cursor.fetchone()
+
+        if row:
+            booking_details = {
+                "booking_id": row.booking_id,
+                "service_provider_details": {
+                    "service_provider_name": row.provider_name,
+                    "provider_phone_number": row.provider_phone_number,
+                    "service_provider_services": row.service_provider_services.split(','),
+                    "service_provider_locations": row.service_provider_locations.split(',')
+                },
+                "user_details": {
+                    "user_name": row.user_name,
+                    "user_phone_number": row.user_phone_number,
+                },
+                "customer_status": row.customer_status
+            }
+
+            return jsonify(booking_details)
+        else:
+            return jsonify({"error": "Booking not found"})
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return jsonify({"error": "Internal Server Error"}), 500
+    finally:
+        cursor.close()
+
+@app.route('/edit_user', methods=['PUT'])
+@cross_origin()
+def edit_user():
+    try:
+        # Extract parameters from the JSON body for PUT requests
+        data = request.json
+        user_mobile_number = data.get('user_mobile_number')
+        new_name = data.get('new_name')
+        new_mobile_number = data.get('new_mobile_number')
+        new_email = data.get('new_email')
+
+        # Check if the user with the given mobile number exists
+        cursor.execute('SELECT * FROM accountdetails WHERE MobileNumber = ?', (user_mobile_number,))
+        user = cursor.fetchone()
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        # Begin the transaction
+        cursor.execute("BEGIN TRANSACTION;")
+
+        # Update the related records in the "ServiceBookings" table
+        if new_mobile_number is not None:
+            cursor.execute(
+                "UPDATE ServiceBookings SET user_phone_number = ? WHERE user_phone_number = ?",
+                (new_mobile_number, user_mobile_number)
+            )
+            conn.commit()
+
+        # Update the user profile based on the mobile number in the "accountdetails" table
+        update_query_accountdetails = "UPDATE accountdetails SET"
+        update_params_accountdetails = []
+
+        if new_name is not None:
+            update_query_accountdetails += " Username = ?,"
+            update_params_accountdetails.append(new_name)
+
+        if new_mobile_number is not None:
+            update_query_accountdetails += " MobileNumber = ?,"
+            update_params_accountdetails.append(new_mobile_number)
+
+        if new_email is not None:
+            update_query_accountdetails += " Email = ?,"
+            update_params_accountdetails.append(new_email)
+
+        # Remove the trailing comma if there are updates
+        if update_params_accountdetails:
+            update_query_accountdetails = update_query_accountdetails.rstrip(',')
+            update_query_accountdetails += " WHERE MobileNumber = ?"
+            update_params_accountdetails.append(user_mobile_number)
+
+            cursor.execute(update_query_accountdetails, tuple(update_params_accountdetails))
+            conn.commit()
+
+            # Update the user_name or user_email in the "ServiceBookings" table if they are updated
+            update_query_servicebookings = "UPDATE ServiceBookings SET"
+            update_params_servicebookings = []
+
+            if new_name is not None:
+                update_query_servicebookings += " user_name = ?,"
+                update_params_servicebookings.append(new_name)
+
+            if new_email is not None:
+                update_query_servicebookings += " user_email = ?,"
+                update_params_servicebookings.append(new_email)
+
+            # Remove the trailing comma if there are updates
+            if update_params_servicebookings:
+                update_query_servicebookings = update_query_servicebookings.rstrip(',')
+                update_query_servicebookings += " WHERE user_phone_number = ?"
+                update_params_servicebookings.append(new_mobile_number)
+
+                cursor.execute(update_query_servicebookings, tuple(update_params_servicebookings))
+                conn.commit()
+
+        # Commit the transaction
+        cursor.execute("COMMIT TRANSACTION;")
+
+        # Return a success message
+        return jsonify({"message": "User profile updated successfully"})
+    except Exception as e:
+        # Rollback the transaction in case of an exception
+        cursor.execute("ROLLBACK TRANSACTION;")
+
+        # Log the error and return an error message
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
