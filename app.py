@@ -992,7 +992,6 @@ def get_customer_booking_details(customer_mobile_number):
 
     return jsonify({ 'provider_details': provider_details_list})
 
-
 @app.route('/update_account', methods=['PUT'])
 @cross_origin()
 def update_account():
