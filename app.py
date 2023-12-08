@@ -467,78 +467,6 @@ def login():
         # Return an error response with a 500 status code (Internal Server Error)
         return jsonify({"error": str(e)}), 500
 
-@app.route('/book_and_get_details', methods=['POST'])
-@cross_origin()
-def book_and_get_details():
-    cursor = conn.cursor()
-
-    try:
-        data = request.json
-        provider_mobile_number = data.get('provider_mobile_number')
-
-        # Check if the provider_mobile_number is valid
-        cursor.execute('SELECT * FROM maidreg WHERE PhoneNumber = ?', (provider_mobile_number,))
-        provider = cursor.fetchone()
-
-        if not provider:
-            return jsonify({"error": "Invalid service provider"}), 400
-
-        customer_mobile_number = data.get('customer_mobile_number')
-
-        # Insert into BookingDetails and retrieve the last inserted ID
-        cursor.execute('INSERT INTO BookingDetails (customer_mobile_number, provider_mobile_number) OUTPUT INSERTED.id VALUES (?, ?)', (customer_mobile_number, provider_mobile_number))
-        last_inserted_id = cursor.fetchone().id
-        conn.commit()
-
-        query = '''
-            SELECT
-                bd.id AS booking_id,
-                m.Id AS maid_id,
-                m.Name AS maid_name,
-                m.Gender AS maid_gender,
-                m.Services AS maid_services,
-                m.Locations AS maid_locations,
-                ad.MobileNumber AS customer_mobile_number,
-                ad.UserID AS customer_id,
-                ad.Username AS customer_name,
-                ad.Email AS customer_email
-            FROM
-                BookingDetails bd
-                INNER JOIN maidreg m ON bd.provider_mobile_number = m.PhoneNumber
-                INNER JOIN accountdetails ad ON bd.customer_mobile_number = ad.MobileNumber
-            WHERE
-                bd.id = ?
-        '''
-
-        cursor.execute(query, (last_inserted_id,))
-        row = cursor.fetchone()
-
-        if row:
-            booking_details = {
-                "booking_id": row.booking_id,
-                "maid_details": {
-                    "maid_id": row.maid_id,
-                    "maid_name": row.maid_name,
-                    "maid_gender": row.maid_gender,
-                    "maid_services": row.maid_services.split(','),
-                    "maid_locations": row.maid_locations.split(',')
-                },
-                "customer_details": {
-                    "customer_id": row.customer_id,
-                    "customer_mobile_number": row.customer_mobile_number,
-                    "customer_name": row.customer_name,
-                    "customer_email": row.customer_email
-                }
-            }
-
-            return jsonify(booking_details)
-        else:
-            return jsonify({"error": "Booking not found"})
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        return jsonify({"error": "Internal Server Error"}), 500
-    finally:
-        cursor.close()
 
 @app.route('/edit_user', methods=['PUT'])
 @cross_origin()
@@ -1064,109 +992,6 @@ def get_customer_booking_details(customer_mobile_number):
 
     return jsonify({ 'provider_details': provider_details_list})
 
-def convert_date_format(date_str):
-    try:
-        # Try parsing as datemonthyear format
-        return datetime.strptime(date_str, '%d%m%Y').strftime('%Y-%m-%d')
-    except ValueError:
-        try:
-            # Try parsing as yearmonthdate format
-            return datetime.strptime(date_str, '%Y%m%d').strftime('%Y-%m-%d')
-        except ValueError:
-            try:
-                # Try parsing as a different format (e.g., '07-12-2023')
-                return datetime.strptime(date_str, '%d-%m-%Y').strftime('%Y-%m-%d')
-            except ValueError:
-                # If all parsing attempts fail, raise an error or handle it as needed
-                raise ValueError(f"Invalid date format: {date_str}")
-            
-def convert_time_to_string(time_obj, use_12_hour_format=True):
-    if use_12_hour_format:
-        return time_obj.strftime('%I:%M %p')
-    else:
-        return time_obj.strftime('%H:%M')
-
-@app.route('/booknow', methods=['POST'])
-@cross_origin()
-def book_now():
-    data = request.json
-
-    customer_mobile_number = data.get('customer_mobile_number')
-    provider_mobile_number = data.get('provider_mobile_number')
-
-    # Fetch provider details from MaidReg based on the provided mobile number
-    sql_query = f"SELECT * FROM maidreg WHERE PhoneNumber = '{provider_mobile_number}'"
-
-    cursor.execute(sql_query)
-    provider_details = cursor.fetchone()
-
-    sql_query_customer = f"SELECT Username FROM accountdetails WHERE MobileNumber = '{customer_mobile_number}'"
-    cursor.execute(sql_query_customer)
-    customer_name_result = cursor.fetchone()
-
-    if provider_details and customer_name_result:
-        customer_name = customer_name_result.Username
-        # Parse and format the date string
-        date_str = data.get('date')
-        formatted_date = convert_date_format(date_str)
-
-        # Create a new booking entry
-        new_booking = {
-            'customer_mobile_number': customer_mobile_number,
-            'provider_mobile_number': provider_mobile_number,
-            'Location': data.get('Location'),
-            'Services': data.get('Services'),
-            'date': formatted_date,  # Use the formatted date
-            'start_time': data.get('start_time'),
-            'Customer_name': customer_name,
-            'Provider_name': provider_details.Name,
-            'Povider_locations': provider_details.Locations,
-            'Provider_services': provider_details.Services
-        }
-
-        # Assuming you have a separate table for bookings or modify as needed
-        booking_sql = f"INSERT INTO BookingDetails ({', '.join(new_booking.keys())}) OUTPUT INSERTED.id VALUES ({', '.join(['?' for _ in new_booking.values()])})"
-        try:
-            cursor.execute(booking_sql, list(new_booking.values()))
-            last_inserted_id = cursor.fetchone().id
-            app.logger.info(f"Inserted into BookingDetails. Last inserted ID: {last_inserted_id}")
-            conn.commit()
-
-            # Retrieve all details from BookingDetails for the last inserted ID
-            cursor.execute(f"SELECT * FROM BookingDetails WHERE id = ?", (last_inserted_id,))
-            booked_details = cursor.fetchone()
-
-            # Convert time to string before serializing
-            booked_details_date_str = booked_details.date.strftime('%Y-%m-%d')
-            
-            booked_details_start_time_str_12hr = convert_time_to_string(booked_details.start_time, use_12_hour_format=True)
-            booked_details_start_time_str_24hr = convert_time_to_string(booked_details.start_time, use_12_hour_format=False)
-
-            return jsonify({
-                'message': 'Booking successful!',
-                'last_inserted_id': last_inserted_id,
-                'booked_details': {
-                    'id': booked_details.id,
-                    'customer_mobile_number': booked_details.customer_mobile_number,
-                    'provider_mobile_number': booked_details.provider_mobile_number,
-                    'Location': booked_details.Location,
-                    'Services': booked_details.Services,
-                    'date': booked_details_date_str,  # Convert time to string
-                    # 'start_time': booked_details.start_time,
-                    'start_time': booked_details_start_time_str_12hr,
-                    # 'start_time_24hr': booked_details_start_time_str_24hr,
-                    'Customer_name': booked_details.Customer_name,
-                    'Provider_name': booked_details.Provider_name,
-                    'Povider_locations': booked_details.Povider_locations,
-                    'Provider_services': booked_details.Provider_services
-                }
-            }), 200
-        except pyodbc.Error as e:
-            app.logger.error("Error executing booking SQL query: %s", e)
-            return jsonify({'message': 'Error creating booking'}), 500
-        
-    else:
-        return jsonify({'message': 'Provider not found!'}), 404
 
 @app.route('/update_account', methods=['PUT'])
 @cross_origin()
@@ -1237,21 +1062,109 @@ def update_account():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# #@app.route('/all-booking-details', methods=['GET'])
-# #@cross_origin()
-# #def get_all_booking_details():
-#     # Query all booking details
-#     booking_sql_query = "SELECT * FROM BookingDetails"
-#     cursor.execute(booking_sql_query)
-#     booking_details = cursor.fetchall()
+def convert_date_format(date_str):
+    try:
+        # Try parsing as 'YYYY-MM-DD' format
+        return datetime.strptime(date_str, '%Y-%m-%d').strftime('%Y-%m-%d')
+    except ValueError:
+        try:
+            # Try parsing as 'DD-MM-YYYY' format
+            return datetime.strptime(date_str, '%d-%m-%Y').strftime('%Y-%m-%d')
+        except ValueError:
+            # If parsing fails, raise an error or handle it as needed
+            raise ValueError(f"Invalid date format: {date_str}")
+            
+def convert_time_to_string(time_obj, use_12_hour_format=True):
+    if use_12_hour_format:
+        return time_obj.strftime('%I:%M %p')
+    else:
+        return time_obj.strftime('%H:%M')
 
-#     # Convert the query result to a list of dictionaries for JSON response
-#     booking_details_list = [dict(zip([column[0] for column in cursor.description], row)) for row in booking_details]
+# ... (previous code)
 
-#     if not booking_details_list:
-#         return jsonify({'message': 'No booking details found'}), 404
+@app.route('/booknow', methods=['POST'])
+@cross_origin()
+def book_now():
+    data = request.json
 
-#     return jsonify({'booking_details': booking_details_list})
+    customer_mobile_number = data.get('customer_mobile_number')
+    provider_mobile_number = data.get('provider_mobile_number')
+
+    # Fetch provider details from MaidReg based on the provided mobile number
+    sql_query_provider = f"SELECT * FROM maidreg WHERE PhoneNumber = '{provider_mobile_number}'"
+    cursor.execute(sql_query_provider)
+    provider_details = cursor.fetchone()
+
+    sql_query_customer = f"SELECT Username, Email FROM accountdetails WHERE MobileNumber = '{customer_mobile_number}'"
+    cursor.execute(sql_query_customer)
+    customer_details = cursor.fetchone()
+
+    if provider_details and customer_details:
+
+        # Parse and format the date string
+        date_str = data.get('StartDate')
+        formatted_date = convert_date_format(date_str)
+
+        # Create a new booking entry
+        new_booking = {
+            'user_phone_number': customer_mobile_number,
+            'provider_phone_number': provider_mobile_number,
+            'service_type': data.get('service_type'),  # User-provided
+            'apartment': data.get('apartment'),  # User-provided
+            'StartDate': formatted_date,  # Use the formatted date
+            'start_time': data.get('start_time'),  # User-provided
+            'user_name': customer_details.Username,
+            'user_email': customer_details.Email,
+            'provider_name': provider_details.Name,
+            'customer_status':data.get('status')  # Include provider details
+        }
+
+        # Check if the status is "Confirm" before storing in the database
+        status = data.get('status')
+        
+        if status == 'Confirm':
+            # Assuming you have a separate table for bookings or modify as needed
+            booking_sql = f"INSERT INTO ServiceBookings ({', '.join(new_booking.keys())}) OUTPUT INSERTED.id VALUES ({', '.join(['?' for _ in new_booking.values()])})"
+            try:
+                cursor.execute(booking_sql, list(new_booking.values()))
+                last_inserted_id = cursor.fetchone().id
+                app.logger.info(f"Inserted into ServiceBookings. Last inserted ID: {last_inserted_id}")
+                conn.commit()
+
+                # Retrieve all details from ServiceBookings for the last inserted ID
+                cursor.execute(f"SELECT * FROM ServiceBookings WHERE id = ?", (last_inserted_id,))
+                booked_details = cursor.fetchone()
+
+                # Convert time to string before serializing
+                booked_details_date_str = booked_details.StartDate.strftime('%Y-%m-%d')
+                booked_details_start_time_str_12hr = convert_time_to_string(booked_details.start_time, use_12_hour_format=True)
+
+                return jsonify({
+                    'message': 'Booking confirmed!',
+                    'last_inserted_id': last_inserted_id,
+                    'booked_details': {
+                        'id': booked_details.id,
+                        'user_phone_number': booked_details.user_phone_number,
+                        'provider_phone_number': booked_details.provider_phone_number,
+                        'service_type': booked_details.service_type,
+                        'apartment': booked_details.apartment,
+                        'StartDate': booked_details_date_str,
+                        'start_time': booked_details_start_time_str_12hr,
+                        'user_name': booked_details.user_name,
+                        'user_email': booked_details.user_email,
+                        'provider_name': booked_details.provider_name,
+                    }
+                }), 200
+            except pyodbc.Error as e:
+                app.logger.error("Error executing booking SQL query: %s", e)
+                return jsonify({'message': 'Error confirming booking'}), 500
+        elif status == 'Cancel':
+            return jsonify({'message': 'Booking canceled!'}), 200
+        else:
+            return jsonify({'message': 'Invalid status provided!'}), 400
+        
+    else:
+        return jsonify({'message': 'Provider or Customer not found!'}), 404
 
 
 if __name__ == '__main__':
