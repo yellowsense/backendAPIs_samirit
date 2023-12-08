@@ -982,35 +982,40 @@ def confirm_booking():
             return jsonify({'message': 'Booking rejected'})
     else:
         return jsonify({'message': 'Booking not found or already processed'})
-
 @app.route('/customer-booking-details/<customer_mobile_number>', methods=['GET'])
 @cross_origin()
 def get_customer_booking_details(customer_mobile_number):
-    # Query booking details for a specific customer
-    booking_sql_query = f"SELECT * FROM BookingDetails WHERE customer_mobile_number = '{customer_mobile_number}'"
-    cursor.execute(booking_sql_query)
-    booking_details = cursor.fetchall()
+    try:
+        # Query booking details for a specific customer from ServiceBookings table
+        booking_sql_query = f"SELECT * FROM ServiceBookings WHERE user_phone_number = '{customer_mobile_number}'"
+        cursor.execute(booking_sql_query)
+        booking_details = cursor.fetchall()
 
-    # Convert the query result to a list of dictionaries for JSON response
-    booking_details_list = [dict(zip([column[0] for column in cursor.description], row)) for row in booking_details]
+        # Convert the query result to a list of dictionaries for JSON response
+        booking_details_list = [dict(zip([column[0] for column in cursor.description], row)) for row in booking_details]
 
-    if not booking_details_list:
-        return jsonify({'message': 'No booking details found for the customer'}), 404
+        if not booking_details_list:
+            return jsonify({'message': 'No booking details found for the customer'}), 404
 
-    # Get provider details for each booking using a separate SQL query
-    provider_details_list = []
-    for booking in booking_details_list:
-        provider_mobile_number = booking['provider_mobile_number']
-        provider_sql_query = f"SELECT * FROM MaidReg WHERE PhoneNumber = '{provider_mobile_number}'"
-        cursor.execute(provider_sql_query)
-        provider_details = cursor.fetchone()
+        # Get provider details for each booking using a separate SQL query
+        provider_details_list = []
+        for booking in booking_details_list:
+            provider_mobile_number = booking['provider_phone_number']
+            provider_sql_query = f"SELECT * FROM MaidReg WHERE PhoneNumber = '{provider_mobile_number}'"
+            cursor.execute(provider_sql_query)
+            provider_details = cursor.fetchone()
 
-        if provider_details:
-            provider_details_dict = dict(zip([column[0] for column in cursor.description], provider_details))
-            provider_details_dict[' booking id'] = booking['id']
-            provider_details_list.append(provider_details_dict)
+            if provider_details:
+                provider_details_dict = dict(zip([column[0] for column in cursor.description], provider_details))
+                provider_details_dict['booking_id'] = booking['id']
+                provider_details_list.append(provider_details_dict)
 
-    return jsonify({ 'provider_details': provider_details_list})
+        return jsonify({'provider_details': provider_details_list})
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return jsonify({"error": "Internal Server Error"}), 500
+
 
 @app.route('/update_account', methods=['PUT'])
 @cross_origin()
@@ -1183,9 +1188,9 @@ def book_now():
     else:
         return jsonify({'message': 'Provider or Customer not found!'}), 404
 
-@app.route('/bookingdetails', methods=['POST'])
+@app.route('/booking', methods=['POST'])
 @cross_origin()
-def bookingdetails():
+def booking():
     cursor = conn.cursor()
 
     try:
@@ -1211,56 +1216,62 @@ def bookingdetails():
 
         # Get the username of the customer
         cursor.execute('SELECT Username FROM accountdetails WHERE MobileNumber = ?', (customer_mobile_number,))
-        customer_username = cursor.fetchone().Username
+        customer_username_result = cursor.fetchone()
 
-        # Get the name of the service provider
-        provider_name = provider.Name
+        # Check if the result is not None before accessing the attribute
+        if customer_username_result:
+            customer_username = customer_username_result.Username
 
-        # Insert into ServiceBookings and retrieve the last inserted ID
-        cursor.execute('INSERT INTO ServiceBookings (user_phone_number, provider_phone_number, customer_status, user_name, provider_name) OUTPUT INSERTED.id VALUES (?, ?, ?, ?, ?)', (customer_mobile_number, provider_mobile_number, status, customer_username, provider_name))
-        last_inserted_id = cursor.fetchone().id
-        conn.commit()
+            # Get the name of the service provider
+            provider_name = provider.Name
 
-        query = '''
-            SELECT
-                sb.id AS booking_id,
-                sb.user_name,
-                sb.provider_name,
-                sb.provider_phone_number,
-                sp.Services AS service_provider_services,
-                sp.Locations AS service_provider_locations,
-                ad.MobileNumber AS user_phone_number,
-                sb.customer_status
-            FROM
-                ServiceBookings sb
-                INNER JOIN maidreg sp ON sb.provider_phone_number = sp.PhoneNumber
-                INNER JOIN accountdetails ad ON sb.user_phone_number = ad.MobileNumber
-            WHERE
-                sb.id = ?
-        '''
+            # Insert into ServiceBookings and retrieve the last inserted ID
+            cursor.execute('INSERT INTO ServiceBookings (user_phone_number, provider_phone_number, customer_status, user_name, provider_name) OUTPUT INSERTED.id VALUES (?, ?, ?, ?, ?)', (customer_mobile_number, provider_mobile_number, status, customer_username, provider_name))
+            last_inserted_id = cursor.fetchone().id
+            conn.commit()
 
-        cursor.execute(query, (last_inserted_id,))
-        row = cursor.fetchone()
+            query = '''
+                SELECT
+                    sb.id AS booking_id,
+                    sb.user_name,
+                    sb.provider_name,
+                    sb.provider_phone_number,
+                    sp.Services AS service_provider_services,
+                    sp.Locations AS service_provider_locations,
+                    ad.MobileNumber AS user_phone_number,
+                    sb.customer_status
+                FROM
+                    ServiceBookings sb
+                    INNER JOIN maidreg sp ON sb.provider_phone_number = sp.PhoneNumber
+                    INNER JOIN accountdetails ad ON sb.user_phone_number = ad.MobileNumber
+                WHERE
+                    sb.id = ?
+            '''
 
-        if row:
-            booking_details = {
-                "booking_id": row.booking_id,
-                "service_provider_details": {
-                    "service_provider_name": row.provider_name,
-                    "provider_phone_number": row.provider_phone_number,
-                    "service_provider_services": row.service_provider_services.split(','),
-                    "service_provider_locations": row.service_provider_locations.split(',')
-                },
-                "user_details": {
-                    "user_name": row.user_name,
-                    "user_phone_number": row.user_phone_number,
-                },
-                "customer_status": row.customer_status
-            }
+            cursor.execute(query, (last_inserted_id,))
+            row = cursor.fetchone()
 
-            return jsonify(booking_details)
+            if row:
+                booking_details = {
+                    "booking_id": row.booking_id,
+                    "service_provider_details": {
+                        "service_provider_name": row.provider_name,
+                        "provider_phone_number": row.provider_phone_number,
+                        "service_provider_services": row.service_provider_services.split(','),
+                        "service_provider_locations": row.service_provider_locations.split(',')
+                    },
+                    "user_details": {
+                        "user_name": row.user_name,
+                        "user_phone_number": row.user_phone_number,
+                    },
+                    "customer_status": row.customer_status
+                }
+
+                return jsonify(booking_details)
+            else:
+                return jsonify({"error": "Booking not found"})
         else:
-            return jsonify({"error": "Booking not found"})
+            return jsonify({"error": "User not found"})
     except Exception as e:
         print(f"Error: {str(e)}")
         return jsonify({"error": "Internal Server Error"}), 500
