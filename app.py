@@ -1081,7 +1081,6 @@ def get_customer_maid_details():
         }), 200
     else:
         return jsonify({'message': 'Provider or Customer not found!'}), 404
-
 @app.route('/book_and_get_details', methods=['POST'])
 @cross_origin()
 def book_and_get_details():
