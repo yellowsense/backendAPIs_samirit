@@ -1183,6 +1183,150 @@ def book_now():
     else:
         return jsonify({'message': 'Provider or Customer not found!'}), 404
 
+@app.route('/bookingdetails', methods=['POST'])
+@cross_origin()
+def bookingdetails():
+    cursor = conn.cursor()
+
+    try:
+        data = request.json
+        provider_mobile_number = data.get('provider_mobile_number')
+
+        # Check if the provider_mobile_number is valid
+        cursor.execute('SELECT * FROM maidreg WHERE PhoneNumber = ?', (provider_mobile_number,))
+        provider = cursor.fetchone()
+
+        if not provider:
+            return jsonify({"error": "Invalid service provider"}), 400
+
+        customer_mobile_number = data.get('customer_mobile_number')
+        status = data.get('status')  # New field for customer status
+
+        # Check if the status is valid (confirm or cancel)
+        if status not in ['confirm', 'cancel']:
+            return jsonify({"error": "Invalid customer status"}), 400
+
+        if status == 'cancel':
+            return jsonify({"message": "Booking canceled"})
+
+        # Get the username of the customer
+        cursor.execute('SELECT Username FROM accountdetails WHERE MobileNumber = ?', (customer_mobile_number,))
+        customer_username = cursor.fetchone().Username
+
+        # Get the name of the service provider
+        provider_name = provider.Name
+
+        # Insert into ServiceBookings and retrieve the last inserted ID
+        cursor.execute('INSERT INTO ServiceBookings (user_phone_number, provider_phone_number, customer_status, user_name, provider_name) OUTPUT INSERTED.id VALUES (?, ?, ?, ?, ?)', (customer_mobile_number, provider_mobile_number, status, customer_username, provider_name))
+        last_inserted_id = cursor.fetchone().id
+        conn.commit()
+
+        query = '''
+            SELECT
+                sb.id AS booking_id,
+                sb.user_name,
+                sb.provider_name,
+                sb.provider_phone_number,
+                sp.Services AS service_provider_services,
+                sp.Locations AS service_provider_locations,
+                ad.MobileNumber AS user_phone_number,
+                sb.customer_status
+            FROM
+                ServiceBookings sb
+                INNER JOIN maidreg sp ON sb.provider_phone_number = sp.PhoneNumber
+                INNER JOIN accountdetails ad ON sb.user_phone_number = ad.MobileNumber
+            WHERE
+                sb.id = ?
+        '''
+
+        cursor.execute(query, (last_inserted_id,))
+        row = cursor.fetchone()
+
+        if row:
+            booking_details = {
+                "booking_id": row.booking_id,
+                "service_provider_details": {
+                    "service_provider_name": row.provider_name,
+                    "provider_phone_number": row.provider_phone_number,
+                    "service_provider_services": row.service_provider_services.split(','),
+                    "service_provider_locations": row.service_provider_locations.split(',')
+                },
+                "user_details": {
+                    "user_name": row.user_name,
+                    "user_phone_number": row.user_phone_number,
+                },
+                "customer_status": row.customer_status
+            }
+
+            return jsonify(booking_details)
+        else:
+            return jsonify({"error": "Booking not found"})
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return jsonify({"error": "Internal Server Error"}), 500
+    finally:
+        cursor.close()
+
+@app.route('/getcustomermaiddetails', methods=['POST'])
+@cross_origin()
+def get_customer_maid_details():
+    data = request.json
+
+    customer_mobile_number = data.get('customer_mobile_number')
+    provider_mobile_number = data.get('provider_mobile_number')
+
+    # Fetch provider details from MaidReg based on the provided mobile number
+    sql_query_provider = f"SELECT * FROM maidreg WHERE PhoneNumber = '{provider_mobile_number}'"
+    cursor.execute(sql_query_provider)
+    provider_details = cursor.fetchone()
+
+    # Fetch customer details from AccountDetails based on the provided mobile number
+    sql_query_customer = f"SELECT * FROM accountdetails WHERE MobileNumber = '{customer_mobile_number}'"
+    cursor.execute(sql_query_customer)
+    customer_details = cursor.fetchone()
+
+    if provider_details and customer_details:
+        # Your existing code for processing and returning the details
+
+        return jsonify({
+            'message': 'Details fetched successfully!',
+            'customer_details': {
+                'UserID': customer_details.UserID,
+                'Username': customer_details.Username,
+                'MobileNumber': customer_details.MobileNumber,
+                'Email': customer_details.Email,
+                'Passwrd': customer_details.Passwrd,
+                'Role': customer_details.Role,
+                'Age': customer_details.Age,
+                'Gender': customer_details.Gender,
+                'Services': customer_details.Services,
+                'PanCardNumber': customer_details.PanCardNumber,
+                'AadharCard': customer_details.AadharCard,
+                'Location': customer_details.Location,
+            },
+            'provider_details': {
+                'ID': provider_details.ID,
+                'Name': provider_details.Name,
+                'PhoneNumber': provider_details.PhoneNumber,
+                'Gender': provider_details.Gender,
+                'Services': provider_details.Services,
+                'Locations': provider_details.Locations,
+                'Location IDs': provider_details.LocationIDs,
+                'Timings': provider_details.Timings,
+                'AadharNumber': provider_details.AadharNumber,
+                'RATING': provider_details.RATING,
+                'languages': provider_details.languages,
+                'second_category': provider_details.second_category,
+                'Region': provider_details.Region,
+                'description': provider_details.description,
+                'Sunday_availability': provider_details.Sunday_availability,
+                'years_of_experience': provider_details.years_of_experience,
+                'age': provider_details.age,
+                'pancardnumber': provider_details.pancardnumber,
+            }
+        }), 200
+    else:
+        return jsonify({'message': 'Provider or Customer not found!'}),404
 
 if __name__ == '__main__':
     app.run(debug=True)
