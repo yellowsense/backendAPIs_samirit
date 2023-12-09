@@ -1287,12 +1287,12 @@ def get_customer_maid_details():
     provider_mobile_number = data.get('provider_mobile_number')
 
     # Fetch provider details from MaidReg based on the provided mobile number
-    sql_query_provider = f"SELECT * FROM maidreg WHERE PhoneNumber = '{provider_mobile_number}'"
+    sql_query_provider = f"SELECT Locations, Services FROM maidreg WHERE PhoneNumber = '{provider_mobile_number}'"
     cursor.execute(sql_query_provider)
     provider_details = cursor.fetchone()
 
     # Fetch customer details from AccountDetails based on the provided mobile number
-    sql_query_customer = f"SELECT * FROM accountdetails WHERE MobileNumber = '{customer_mobile_number}'"
+    sql_query_customer = f"SELECT Username, MobileNumber FROM accountdetails WHERE MobileNumber = '{customer_mobile_number}'"
     cursor.execute(sql_query_customer)
     customer_details = cursor.fetchone()
 
@@ -1302,38 +1302,12 @@ def get_customer_maid_details():
         return jsonify({
             'message': 'Details fetched successfully!',
             'customer_details': {
-                'UserID': customer_details.UserID,
                 'Username': customer_details.Username,
                 'MobileNumber': customer_details.MobileNumber,
-                'Email': customer_details.Email,
-                'Passwrd': customer_details.Passwrd,
-                'Role': customer_details.Role,
-                'Age': customer_details.Age,
-                'Gender': customer_details.Gender,
-                'Services': customer_details.Services,
-                'PanCardNumber': customer_details.PanCardNumber,
-                'AadharCard': customer_details.AadharCard,
-                'Location': customer_details.Location,
             },
             'provider_details': {
-                'ID': provider_details.ID,
-                'Name': provider_details.Name,
-                'PhoneNumber': provider_details.PhoneNumber,
-                'Gender': provider_details.Gender,
-                'Services': provider_details.Services,
                 'Locations': provider_details.Locations,
-                'Location IDs': provider_details.LocationIDs,
-                'Timings': provider_details.Timings,
-                'AadharNumber': provider_details.AadharNumber,
-                'RATING': provider_details.RATING,
-                'languages': provider_details.languages,
-                'second_category': provider_details.second_category,
-                'Region': provider_details.Region,
-                'description': provider_details.description,
-                'Sunday_availability': provider_details.Sunday_availability,
-                'years_of_experience': provider_details.years_of_experience,
-                'age': provider_details.age,
-                'pancardnumber': provider_details.pancardnumber,
+                'Services': provider_details.Services,
             }
         }), 200
     else:
