@@ -1287,12 +1287,12 @@ def get_customer_maid_details():
     provider_mobile_number = data.get('provider_mobile_number')
 
     # Fetch provider details from MaidReg based on the provided mobile number
-    sql_query_provider = f"SELECT Locations, Services FROM maidreg WHERE PhoneNumber = '{provider_mobile_number}'"
+    sql_query_provider = f"SELECT ID, Name, PhoneNumber, Locations, Services FROM maidreg WHERE PhoneNumber = '{provider_mobile_number}'"
     cursor.execute(sql_query_provider)
     provider_details = cursor.fetchone()
 
     # Fetch customer details from AccountDetails based on the provided mobile number
-    sql_query_customer = f"SELECT Username, MobileNumber FROM accountdetails WHERE MobileNumber = '{customer_mobile_number}'"
+    sql_query_customer = f"SELECT UserID, Username, MobileNumber FROM accountdetails WHERE MobileNumber = '{customer_mobile_number}'"
     cursor.execute(sql_query_customer)
     customer_details = cursor.fetchone()
 
@@ -1302,10 +1302,14 @@ def get_customer_maid_details():
         return jsonify({
             'message': 'Details fetched successfully!',
             'customer_details': {
+                'UserID': customer_details.UserID,
                 'Username': customer_details.Username,
                 'MobileNumber': customer_details.MobileNumber,
             },
             'provider_details': {
+                'ID': provider_details.ID,
+                'Name': provider_details.Name,
+                'PhoneNumber': provider_details.PhoneNumber,
                 'Locations': provider_details.Locations,
                 'Services': provider_details.Services,
             }
