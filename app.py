@@ -1281,7 +1281,7 @@ def booking():
 @app.route('/getcustomermaiddetails', methods=['GET'])
 @cross_origin()
 def get_customer_maid_details():
-    data = request.json
+    data = request.args  # Use request.args for GET requests
 
     customer_mobile_number = data.get('customer_mobile_number')
     provider_mobile_number = data.get('provider_mobile_number')
