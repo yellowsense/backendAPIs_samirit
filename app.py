@@ -1278,7 +1278,7 @@ def booking():
     finally:
         cursor.close()
 
-@app.route('/getcustomermaiddetails', methods=['POST'])
+@app.route('/getcustomermaiddetails', methods=['GET'])
 @cross_origin()
 def get_customer_maid_details():
     data = request.json
