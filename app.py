@@ -330,7 +330,6 @@ def send_maid_confirmation_email(
     
     body += '\nThank you for choosing our services!'
     body +='\nThis is an auto generated mail. Please do not reply to this mail For any further queries feel free to contact us at support@yellowsense.in '
-
     
      # Send to the user and orders email
     recipients = [recipient, 'orders@yellowsense.in']
