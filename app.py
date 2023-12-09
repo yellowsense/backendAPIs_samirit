@@ -1364,5 +1364,69 @@ def booking_accept_reject():
     else:
         return jsonify({'message': 'Booking not found or already processed'})
 
+@app.route('/serviceprovider/ongoing_requests', methods=['GET'])
+@cross_origin()
+def ongoing_requests():
+    provider_mobile = request.args.get('provider_mobile')
+
+    # Execute raw SQL query to count ongoing (accepted) requests
+    ongoing_query = f"SELECT COUNT(*) FROM ServiceBookings WHERE provider_phone_number = '{provider_mobile}' AND status = 'accepted';"
+    cursor.execute(ongoing_query)
+    ongoing_count = cursor.fetchone()[0]
+
+    response = {
+        'ongoing_requests': ongoing_count
+    }
+
+    return jsonify(response)
+
+@app.route('/serviceprovider/cancelled_requests', methods=['GET'])
+@cross_origin()
+def cancelled_requests():
+    provider_mobile = request.args.get('provider_mobile')
+
+    # Execute raw SQL query to count canceled (rejected) requests
+    cancelled_query = f"SELECT COUNT(*) FROM ServiceBookings WHERE provider_phone_number = '{provider_mobile}' AND status = 'rejected';"
+    cursor.execute(cancelled_query)
+    cancelled_count = cursor.fetchone()[0]
+
+    response = {
+        'cancelled_requests': cancelled_count
+    }
+
+    return jsonify(response)
+@app.route('/customer/ongoing_requests', methods=['GET'])
+@cross_origin()
+def customer_ongoing_requests():
+    customer_mobile = request.args.get('customer_mobile')
+
+    # Execute raw SQL query to count ongoing (accepted) requests for the customer
+    ongoing_query = f"SELECT COUNT(*) FROM ServiceBookings WHERE user_phone_number = '{customer_mobile}' AND status = 'accepted';"
+    cursor.execute(ongoing_query)
+    ongoing_count = cursor.fetchone()[0]
+
+    response = {
+        'ongoing_requests': ongoing_count
+    }
+
+    return jsonify(response)
+
+@app.route('/customer/cancelled_requests', methods=['GET'])
+@cross_origin()
+def customer_cancelled_requests():
+    customer_mobile = request.args.get('customer_mobile')
+
+    # Execute raw SQL query to count canceled (rejected) requests for the customer
+    cancelled_query = f"SELECT COUNT(*) FROM ServiceBookings WHERE user_phone_number = '{customer_mobile}' AND status = 'rejected';"
+    cursor.execute(cancelled_query)
+    cancelled_count = cursor.fetchone()[0]
+
+    response = {
+        'cancelled_requests': cancelled_count
+    }
+
+    return jsonify(response)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
