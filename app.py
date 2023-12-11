@@ -1426,6 +1426,64 @@ def customer_cancelled_requests():
     }
 
     return jsonify(response)
+@app.route('/serviceprovider/requests', methods=['GET'])
+@cross_origin()
+def get_requests():
+    provider_mobile = request.args.get('provider_mobile')
+    request_type = request.args.get('request_type')  # 'total', 'accepted', or 'rejected'
+
+    if request_type == 'total':
+        status_condition = ""  # Empty condition to get the total count
+    elif request_type == 'accepted':
+        status_condition = "status = 'accepted'"
+    elif request_type == 'rejected':
+        status_condition = "status = 'rejected'"
+    else:
+        return jsonify({'error': 'Invalid request_type'}), 400
+
+    # Execute raw SQL query to count requests based on the specified type
+    if request_type == 'total':
+        query = f"SELECT COUNT(*) FROM ServiceBookings WHERE provider_phone_number = '{provider_mobile}';"
+    else:
+        query = f"SELECT COUNT(*) FROM ServiceBookings WHERE provider_phone_number = '{provider_mobile}' AND {status_condition};"
+    
+    cursor.execute(query)
+    request_count = cursor.fetchone()[0]
+
+    response = {
+        f'{request_type}_requests': request_count
+    }
+
+    return jsonify(response)
+
+@app.route('/serviceprovider/requests_details', methods=['GET'])
+@cross_origin()
+def get_requests_details():
+    provider_mobile = request.args.get('provider_mobile')
+    request_status = request.args.get('request_status')  # 'accepted', 'rejected', or 'total'
+
+    if request_status not in ['accepted', 'rejected', 'total']:
+        return jsonify({'error': 'Invalid request_status'}), 400
+
+    # Execute raw SQL query to retrieve details based on the specified status
+    if request_status == 'total':
+        query = f"SELECT user_name, user_address, user_phone_number, apartment, service_type FROM ServiceBookings WHERE provider_phone_number = '{provider_mobile}';"
+    else:
+        status_condition = f"status = '{request_status}'"
+        query = f"SELECT user_name, user_address, user_phone_number, apartment, service_type FROM ServiceBookings WHERE provider_phone_number = '{provider_mobile}' AND {status_condition};"
+
+    cursor.execute(query)
+    columns = [column[0] for column in cursor.description]
+    
+    # Convert each row to a dictionary for JSON serialization
+    rows = cursor.fetchall()
+    request_details = [dict(zip(columns, row)) for row in rows]
+
+    response = {
+        f'{request_status}_requests': request_details
+    }
+
+    return jsonify(response)
 
 
 if __name__ == '__main__':
