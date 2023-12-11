@@ -1484,7 +1484,128 @@ def get_requests_details():
     }
 
     return jsonify(response)
+@app.route('/profile_details', methods=['POST'])
+@cross_origin()
+def profile_details():
+    try:
+        data = request.json
+        user_mobile_number = data.get('user_mobile_number')
 
+        cursor.execute("BEGIN TRANSACTION;")
+
+        # Update or insert into accountdetails
+        cursor.execute('SELECT * FROM accountdetails WHERE MobileNumber = ?', (user_mobile_number,))
+        user_in_accountdetails = cursor.fetchone()
+        if user_in_accountdetails:
+            update_query_accountdetails = """
+                UPDATE accountdetails
+                SET Username = ?, Services = ?, Gender = ?, AadharCard = ?, PanCardNumber = ?, Age = ?
+                WHERE MobileNumber = ?
+            """
+            cursor.execute(
+                update_query_accountdetails,
+                (
+                    data.get('name'),
+                    data.get('services'),
+                    data.get('gender'),
+                    data.get('aadhar_number'),
+                    data.get('pan_card'),
+                    data.get('age'),
+                    user_mobile_number
+                )
+            )
+            conn.commit()
+        else:
+            insert_query_accountdetails = """
+                INSERT INTO accountdetails (MobileNumber, Username, Services, Gender, AadharCard, PanCardNumber, Age)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """
+            cursor.execute(
+                insert_query_accountdetails,
+                (
+                    user_mobile_number,
+                    data.get('name'),
+                    data.get('services'),
+                    data.get('gender'),
+                    data.get('aadhar_number'),
+                    data.get('pan_card'),
+                    data.get('age'),
+                )
+            )
+            conn.commit()
+
+        # Update or insert into maidreg
+        cursor.execute('SELECT * FROM maidreg WHERE PhoneNumber = ?', (user_mobile_number,))
+        user_in_maidreg = cursor.fetchone()
+        if user_in_maidreg:
+            update_query_maidreg = """
+                UPDATE maidreg
+                SET Name = ?, Services = ?, Locations = ?, Timings = ?, AadharNumber = ?, RATING = ?,
+                languages = ?, second_category = ?, Region = ?, description = ?, Sunday_availability = ?,
+                years_of_experience = ?, age = ?, Gender = ?, pancardnumber = ?
+                WHERE PhoneNumber = ?
+            """
+            cursor.execute(
+                update_query_maidreg,
+                (
+                    data.get('name'),
+                    data.get('services'),
+                    data.get('locations'),
+                    data.get('timings'),
+                    data.get('aadhar_number'),
+                    data.get('rating'),
+                    data.get('languages'),
+                    data.get('second_category'),
+                    data.get('region'),
+                    data.get('description'),
+                    data.get('sunday_availability'),
+                    data.get('years_of_experience'),
+                    data.get('age'),
+                    data.get('gender'),
+                    data.get('pan_card'),
+                    user_mobile_number,
+                )
+            )
+            conn.commit()
+        else:
+            insert_query_maidreg = """
+                INSERT INTO maidreg (PhoneNumber, Name, Services, Locations, Timings, AadharNumber , RATING ,languages, second_category , Region , description , Sunday_availability ,years_of_experience, age , Gender , pancardnumber)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            cursor.execute(
+                insert_query_maidreg,
+                (
+                    user_mobile_number,
+                    data.get('name'),
+                    data.get('services'),
+                    data.get('locations'),
+                    data.get('timings'),
+                    data.get('aadhar_number'),
+                    data.get('rating'),
+                    data.get('languages'),
+                    data.get('second_category'),
+                    data.get('region'),
+                    data.get('description'),
+                    data.get('sunday_availability'),
+                    data.get('years_of_experience'),
+                    data.get('age'),
+                    data.get('gender'),
+                    data.get('pan_card'),
+                )
+            )
+            conn.commit()
+
+        cursor.execute("COMMIT TRANSACTION;")
+
+        return jsonify({"message": "User profile updated or created successfully"})
+    except pyodbc.IntegrityError as e:
+        cursor.execute("ROLLBACK TRANSACTION;")
+        app.logger.error(str(e))
+        return jsonify({"error": "Duplicate phone number in maidreg or accountdetails table"}), 500
+    except Exception as e:
+        cursor.execute("ROLLBACK TRANSACTION;")
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
