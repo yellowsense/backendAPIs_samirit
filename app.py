@@ -1484,6 +1484,7 @@ def get_requests_details():
     }
 
     return jsonify(response)
+
 @app.route('/profile_details', methods=['POST'])
 @cross_origin()
 def profile_details():
@@ -1499,7 +1500,7 @@ def profile_details():
         if user_in_accountdetails:
             update_query_accountdetails = """
                 UPDATE accountdetails
-                SET Username = ?, Services = ?, Gender = ?, AadharCard = ?, PanCardNumber = ?, Age = ?
+                SET Username = ?, Services = ?, Gender = ?, AadharCard = ?, PanCardNumber = ?, Age = ?, Location = ?, Languages = ?
                 WHERE MobileNumber = ?
             """
             cursor.execute(
@@ -1511,14 +1512,16 @@ def profile_details():
                     data.get('aadhar_number'),
                     data.get('pan_card'),
                     data.get('age'),
+                    data.get('locations'),
+                    data.get('languages'),
                     user_mobile_number
                 )
             )
             conn.commit()
         else:
             insert_query_accountdetails = """
-                INSERT INTO accountdetails (MobileNumber, Username, Services, Gender, AadharCard, PanCardNumber, Age)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO accountdetails (MobileNumber, Username, Services, Gender, AadharCard, PanCardNumber, Age, Location, Languages)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
             cursor.execute(
                 insert_query_accountdetails,
@@ -1530,6 +1533,8 @@ def profile_details():
                     data.get('aadhar_number'),
                     data.get('pan_card'),
                     data.get('age'),
+                    data.get('locations'),
+                    data.get('languages')
                 )
             )
             conn.commit()
