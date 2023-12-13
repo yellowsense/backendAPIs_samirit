@@ -1497,10 +1497,18 @@ def profile_details():
         # Update or insert into accountdetails
         cursor.execute('SELECT * FROM accountdetails WHERE MobileNumber = ?', (user_mobile_number,))
         user_in_accountdetails = cursor.fetchone()
+
         if user_in_accountdetails:
             update_query_accountdetails = """
                 UPDATE accountdetails
-                SET Username = ?, Services = ?, Gender = ?, AadharCard = ?, PanCardNumber = ?, Age = ?, Location = ?, Languages = ?
+                SET Username = COALESCE(?, Username),
+                    Services = COALESCE(?, Services),
+                    Gender = COALESCE(?, Gender),
+                    AadharCard = COALESCE(?, AadharCard),
+                    PanCardNumber = COALESCE(?, PanCardNumber),
+                    Age = COALESCE(?, Age),
+                    Location = COALESCE(?, Location),
+                    Languages = COALESCE(?, Languages)
                 WHERE MobileNumber = ?
             """
             cursor.execute(
@@ -1542,12 +1550,25 @@ def profile_details():
         # Update or insert into maidreg
         cursor.execute('SELECT * FROM maidreg WHERE PhoneNumber = ?', (user_mobile_number,))
         user_in_maidreg = cursor.fetchone()
+
         if user_in_maidreg:
             update_query_maidreg = """
                 UPDATE maidreg
-                SET Name = ?, Services = ?, Locations = ?, Timings = ?, AadharNumber = ?, RATING = ?,
-                languages = ?, second_category = ?, Region = ?, description = ?, Sunday_availability = ?,
-                years_of_experience = ?, age = ?, Gender = ?, pancardnumber = ?
+                SET Name = COALESCE(?, Name),
+                    Services = COALESCE(?, Services),
+                    Locations = COALESCE(?, Locations),
+                    Timings = COALESCE(?, Timings),
+                    AadharNumber = COALESCE(?, AadharNumber),
+                    RATING = COALESCE(?, RATING),
+                    languages = COALESCE(?, languages),
+                    second_category = COALESCE(?, second_category),
+                    Region = COALESCE(?, Region),
+                    description = COALESCE(?, description),
+                    Sunday_availability = COALESCE(?, Sunday_availability),
+                    years_of_experience = COALESCE(?, years_of_experience),
+                    age = COALESCE(?, age),
+                    Gender = COALESCE(?, Gender),
+                    pancardnumber = COALESCE(?, pancardnumber)
                 WHERE PhoneNumber = ?
             """
             cursor.execute(
