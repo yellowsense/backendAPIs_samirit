@@ -60,6 +60,8 @@ def insert_maid():
         services = data.get('Services')
         locations = data.get('Locations')
         timings = data.get('Timings')
+        age = data.get('age')
+        languages = data.get('languages')
 
         # Execute the stored procedure
         cursor = conn.cursor()
@@ -71,8 +73,10 @@ def insert_maid():
             "@Gender = ?, "
             "@Services = ?, "
             "@Locations = ?, "
-            "@Timings = ?",
-            (aadhar_number, name, phone_number, gender, services, locations, timings)
+            "@Timings = ?,"
+            "@age = ?, "
+            "@languages = ?",
+            (aadhar_number, name, phone_number, gender, services, locations, timings, age, languages)
         )
         conn.commit()
         cursor.close()
@@ -83,6 +87,7 @@ def insert_maid():
         # Log the error and return an error message in case of an exception
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
+
 
 @app.route('/get_all_maid_details', methods=['GET'])
 @cross_origin()
