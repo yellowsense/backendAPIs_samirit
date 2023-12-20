@@ -88,7 +88,6 @@ def insert_maid():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
-
 @app.route('/get_all_maid_details', methods=['GET'])
 @cross_origin()
 def get_all_maid_details():
