@@ -1636,6 +1636,21 @@ def profile_details():
         cursor.execute("ROLLBACK TRANSACTION;")
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
+        
+@app.route('/area_names', methods=['GET'])
+@cross_origin()
+def get_area_names():
+    try:
+        # Execute a SQL query to retrieve area IDs and names
+        cursor.execute("SELECT AreaID, AreaName FROM Area")
+        rows = cursor.fetchall()
+
+        # Convert the result into an array of dictionaries with id and name
+        area_data = [{"id": row.AreaID, "name": row.AreaName} for row in rows]
+
+        return jsonify(area_data)  # Return JSON with id and name
+    except pyodbc.Error as e:
+        return jsonify({"error": str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True)
