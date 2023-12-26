@@ -1,3 +1,4 @@
+import flask
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 import pyodbc
@@ -43,7 +44,7 @@ def get_society_names():
         # Convert the result into an array of dictionaries with id and name
         society_data = [{"id": row.society_id, "name": row.society_name} for row in rows]
 
-        res=jsonify(society_data)  # Return JSON with id and name
+        res=flask.response(society_data)  # Return JSON with id and name
         res.headers["Access-Control-Allow-Origin"]="*"
         return res
     except pyodbc.Error as e:
