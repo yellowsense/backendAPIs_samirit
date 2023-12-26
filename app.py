@@ -4,8 +4,6 @@ import pyodbc
 from datetime import time, timedelta, datetime
 from dateutil import parser
 from flask_mail import Mail, Message
-from models.user_model import user_model
-obj = user_model()
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -34,10 +32,27 @@ def add_headers(response):
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     return response
 
+from flask import Flask, jsonify, Response
+from flask_cors import CORS, cross_origin
+import pyodbc
+
+app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
+app.config['CORS_HEADERS'] = 'Content-Type'
+
+# ... (Your database setup and other code)
+
+# Function to add custom headers to every response
+@app.after_request
+def add_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = 'https://yellowsense.in'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    return response
+
 @app.route('/society_names', methods=['GET'])
-@cross_origin()
+@cross_origin(origin='https://yellowsense.in')  # Specific CORS configuration for this route
 def get_society_names():
-    res = flask.Response(obj.all_user_model())
     try:
         # Execute a SQL query to retrieve society names and IDs
         cursor.execute("SELECT society_id, society_name FROM Society")
@@ -46,8 +61,13 @@ def get_society_names():
         # Convert the result into an array of dictionaries with id and name
         society_data = [{"id": row.society_id, "name": row.society_name} for row in rows]
 
-        return jsonify(society_data)  # Return JSON with id and name
-        return res
+        # Create a Flask Response object and set CORS headers
+        res = Response(jsonify({"society_data": society_data}))
+        res.headers['Access-Control-Allow-Origin'] = 'https://yellowsense.in'
+        res.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE'
+        res.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+
+        return res  # Return the custom response object
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
 
