@@ -52,7 +52,7 @@ def get_society_names():
         return res  # Return the custom response object
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
-
+        
 @app.route('/insert_maid', methods=['POST'])
 @cross_origin()
 def insert_maid():
