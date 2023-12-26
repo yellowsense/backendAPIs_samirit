@@ -576,10 +576,11 @@ def parse_time_string(time_str):
 def find_matching_service_providers(locations, services, start_time_str):
     try:
         cursor.execute("""
-            SELECT ID, Name, Gender, Services, Locations, Timings
+            SELECT ID, Name, Gender, Services, Locations, Timings, RATING
             FROM maidreg
             WHERE CHARINDEX(?, Locations) > 0
               AND CHARINDEX(?, Services) > 0
+              ORDER BY RATING DESC
         """, (locations, services))
 
         rows = cursor.fetchall()
@@ -612,7 +613,8 @@ def find_matching_service_providers(locations, services, start_time_str):
                                         "Gender": row.Gender,
                                         "Services": row_services,
                                         "Locations": row_locations,
-                                        "Timings": timings
+                                        "Timings": timings,
+                                        "Rating": row.RATING 
                                     })
                                     break
                         else:
