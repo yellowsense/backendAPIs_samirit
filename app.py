@@ -45,7 +45,7 @@ def get_society_names():
 
         return jsonify(society_data)  # Return JSON with id and name
     except pyodbc.Error as e:
-        return jsonify({"error": str(e)})
+        return jsonify({"error": str(e)})
         
 @app.route('/insert_maid', methods=['POST'])
 @cross_origin()
