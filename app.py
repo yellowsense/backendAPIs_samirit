@@ -44,9 +44,9 @@ def get_society_names():
         # Convert the result into an array of dictionaries with id and name
         society_data = [{"id": row.society_id, "name": row.society_name} for row in rows]
 
-        res=jsonify(society_data)  # Return JSON with id and name
-        res.headers["Access-Control-Allow-Origin"]="*"
-        return res
+        response=jsonify(society_data)  # Return JSON with id and name
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
         
