@@ -4,6 +4,8 @@ import pyodbc
 from datetime import time, timedelta, datetime
 from dateutil import parser
 from flask_mail import Mail, Message
+from models.user_model import user_model
+obj = user_model()
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -35,6 +37,7 @@ def add_headers(response):
 @app.route('/society_names', methods=['GET'])
 @cross_origin()
 def get_society_names():
+    res = flask.Response(obj.all_user_model())
     try:
         # Execute a SQL query to retrieve society names and IDs
         cursor.execute("SELECT society_id, society_name FROM Society")
@@ -44,6 +47,7 @@ def get_society_names():
         society_data = [{"id": row.society_id, "name": row.society_name} for row in rows]
 
         return jsonify(society_data)  # Return JSON with id and name
+        return res
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
 
