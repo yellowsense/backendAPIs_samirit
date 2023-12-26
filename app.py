@@ -32,24 +32,6 @@ def add_headers(response):
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     return response
 
-from flask import Flask, jsonify, Response
-from flask_cors import CORS, cross_origin
-import pyodbc
-
-app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
-app.config['CORS_HEADERS'] = 'Content-Type'
-
-# ... (Your database setup and other code)
-
-# Function to add custom headers to every response
-@app.after_request
-def add_headers(response):
-    response.headers['Access-Control-Allow-Origin'] = 'https://yellowsense.in'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-    return response
-
 @app.route('/society_names', methods=['GET'])
 @cross_origin(origin='https://yellowsense.in')  # Specific CORS configuration for this route
 def get_society_names():
