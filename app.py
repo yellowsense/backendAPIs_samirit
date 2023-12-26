@@ -33,7 +33,7 @@ def add_headers(response):
     return response
 
 @app.route('/society_names', methods=['GET'])
-@cross_origin(origin='https://yellowsense.in')  # Specific CORS configuration for this route
+@cross_origin()
 def get_society_names():
     try:
         # Execute a SQL query to retrieve society names and IDs
@@ -43,15 +43,9 @@ def get_society_names():
         # Convert the result into an array of dictionaries with id and name
         society_data = [{"id": row.society_id, "name": row.society_name} for row in rows]
 
-        # Create a Flask Response object and set CORS headers
-        res = Response(jsonify({"society_data": society_data}))
-        res.headers['Access-Control-Allow-Origin'] = 'https://yellowsense.in'
-        res.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE'
-        res.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-
-        return res  # Return the custom response object
+        return jsonify(society_data)  # Return JSON with id and name
     except pyodbc.Error as e:
-        return jsonify({"error": str(e)})
+        return jsonify({"error": str(e)})
         
 @app.route('/insert_maid', methods=['POST'])
 @cross_origin()
