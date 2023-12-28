@@ -65,6 +65,7 @@ def insert_maid():
         timings = data.get('Timings')
         age = data.get('age')
         languages = data.get('languages')
+        Region = data.get('Region')
 
         # Execute the stored procedure
         cursor = conn.cursor()
@@ -78,8 +79,9 @@ def insert_maid():
             "@Locations = ?, "
             "@Timings = ?,"
             "@age = ?, "
-            "@languages = ?",
-            (aadhar_number, name, phone_number, gender, services, locations, timings, age, languages)
+            "@languages = ?, "
+            "@Region = ? ",
+            (aadhar_number, name, phone_number, gender, services, locations, timings, age, languages, Region)
         )
         conn.commit()
         cursor.close()
