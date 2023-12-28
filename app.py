@@ -563,8 +563,6 @@ def edit_user():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
-
-
 @app.route('/delete_maid_by_mobile', methods=['DELETE'])
 @cross_origin()
 def delete_maid_by_mobile():
