@@ -1350,6 +1350,30 @@ def get_requests():
     provider_mobile = request.args.get('provider_mobile')
     request_type = request.args.get('request_type')  # 'total', 'accepted', or 'rejected'
 
+    if request_type is None:
+        # If request_type is not provided, return counts for all types
+        total_count = get_request_count(provider_mobile, 'total')
+        accepted_count = get_request_count(provider_mobile, 'accepted')
+        rejected_count = get_request_count(provider_mobile, 'rejected')
+
+        response = {
+            'total_requests': total_count,
+            'accepted_requests': accepted_count,
+            'rejected_requests': rejected_count
+        }
+    elif request_type == 'total' or request_type == 'accepted' or request_type == 'rejected':
+        # If request_type is provided, return count for the specified type
+        count = get_request_count(provider_mobile, request_type)
+
+        response = {
+            f'{request_type}_requests': count
+        }
+    else:
+        return jsonify({'error': 'Invalid request_type'}), 400
+
+    return jsonify(response)
+    
+def get_request_count(provider_mobile, request_type):
     if request_type == 'total':
         status_condition = ""  # Empty condition to get the total count
     elif request_type == 'accepted':
@@ -1357,22 +1381,18 @@ def get_requests():
     elif request_type == 'rejected':
         status_condition = "status = 'rejected'"
     else:
-        return jsonify({'error': 'Invalid request_type'}), 400
+        raise ValueError('Invalid request_type')
 
     # Execute raw SQL query to count requests based on the specified type
     if request_type == 'total':
         query = f"SELECT COUNT(*) FROM ServiceBookings WHERE provider_phone_number = '{provider_mobile}';"
     else:
         query = f"SELECT COUNT(*) FROM ServiceBookings WHERE provider_phone_number = '{provider_mobile}' AND {status_condition};"
-    
+
     cursor.execute(query)
     request_count = cursor.fetchone()[0]
 
-    response = {
-        f'{request_type}_requests': request_count
-    }
-
-    return jsonify(response)
+    return request_count
 
 @app.route('/serviceprovider/requests_details', methods=['GET'])
 @cross_origin()
