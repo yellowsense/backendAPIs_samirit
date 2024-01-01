@@ -1616,7 +1616,7 @@ def find_matching_service_providers(locations, services, start_time_str, region)
 
         # Check if region is provided
         if region is not None:
-            query += " AND Region = ?"
+            query += " AND CHARINDEX(?, region) > 0"
 
         # Order by rating
         query += " ORDER BY RATING DESC"
