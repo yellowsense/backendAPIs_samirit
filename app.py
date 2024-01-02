@@ -1,5 +1,5 @@
 import flask
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS, cross_origin
 import pyodbc
 from datetime import time, timedelta, datetime
@@ -1716,15 +1716,11 @@ def get_matching_providers():
     else:
         return jsonify({"providers": "No matching service providers found"})
 
+@app.route('/dynamic-greeting', methods=['GET'])
 def dynamic_greeting():
-    # Create the plain text response
+    # Return plain text response
     greeting_text = "Hello, Happy New Year, and welcome to Yellowsense"
-
-    # Set the content type to text/plain
-    response = make_response(greeting_text)
-    response.headers['Content-Type'] = 'text/plain'
-
-    return response
+    return Response(greeting_text, content_type='text/plain; charset=utf-8')
 
 if __name__ == '__main__':
     app.run(debug=True)
