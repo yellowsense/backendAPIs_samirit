@@ -1722,5 +1722,72 @@ def dynamic_greeting():
     greeting_text = "Hello, Happy New Year, and welcome to Yellowsense. You have received a booking for your service. Please press one to accept and two to reject."
     return Response(greeting_text, content_type='text/plain; charset=utf-8')
 
+@app.route('/dynamic-greeting/maid', methods=['GET'])
+def dynamic_greeting_maid():
+    # Extract details from query parameters
+    provider_name = request.args.get('provider_name')
+    user_name = request.args.get('user_name')
+    apartment = request.args.get('apartment')
+    start_date = request.args.get('start_date')
+    start_time = request.args.get('start_time')
+    service_type = 'maid'  # Specific to maid service
+
+    greeting_text = "Hi {provider_name},\n\nWelcome to Yellowsense! Someone called {user_name} from {apartment} apartment has booked for your {service_type} service to start work from {start_time} on {start_date}.\n"
+    greeting_text += "Please confirm the booking by pressing one. To reject, press two."
+
+    return Response(greeting_text.format(
+        provider_name=provider_name,
+        user_name=user_name,
+        apartment=apartment,
+        start_date=start_date,
+        start_time=start_time,
+        service_type=service_type
+    ), content_type='text/plain; charset=utf-8')
+
+@app.route('/dynamic-greeting/cook', methods=['GET'])
+def dynamic_greeting_cook():
+    # Extract details from query parameters
+    provider_name = request.args.get('provider_name')
+    user_name = request.args.get('user_name')
+    apartment = request.args.get('apartment')
+    start_date = request.args.get('start_date')
+    start_time = request.args.get('start_time')
+    service_type = 'cook'  # Specific to cook service
+
+    greeting_text = "Hi {provider_name},\n\nWelcome to Yellowsense! Someone called {user_name} from {apartment} apartment has booked for your {service_type} service to start work from {start_time} on {start_date}.\n"
+    greeting_text += "Please confirm the booking by pressing one. To reject, press two."
+
+    return Response(greeting_text.format(
+        provider_name=provider_name,
+        user_name=user_name,
+        apartment=apartment,
+        start_date=start_date,
+        start_time=start_time,
+        service_type=service_type
+    ), content_type='text/plain; charset=utf-8')
+
+@app.route('/dynamic-greeting/nanny', methods=['GET'])
+def dynamic_greeting_nanny():
+    # Extract details from query parameters
+    provider_name = request.args.get('provider_name')
+    user_name = request.args.get('user_name')
+    apartment = request.args.get('apartment')
+    start_date = request.args.get('start_date')
+    start_time = request.args.get('start_time')
+    service_type = 'nanny'  # Specific to nanny service
+
+    greeting_text = "Hi {provider_name},\n\nWelcome to Yellowsense! Someone called {user_name} from {apartment} apartment has booked for your {service_type} service to start work from {start_time} on {start_date}.\n"
+    greeting_text += "Please confirm the booking by pressing one. To reject, press two."
+
+    return Response(greeting_text.format(
+        provider_name=provider_name,
+        user_name=user_name,
+        apartment=apartment,
+        start_date=start_date,
+        start_time=start_time,
+        service_type=service_type
+    ), content_type='text/plain; charset=utf-8')
+
+
 if __name__ == '__main__':
     app.run(debug=True)
