@@ -1719,7 +1719,7 @@ def get_matching_providers():
 @app.route('/dynamic-greeting', methods=['GET'])
 def dynamic_greeting():
     # Return plain text response
-    greeting_text = "Hello, Happy New Year, and welcome to Yellowsense"
+    greeting_text = "Hello, Happy New Year, and welcome to Yellowsense. You have received a booking for your service. Please press one to accept and two to reject."
     return Response(greeting_text, content_type='text/plain; charset=utf-8')
 
 if __name__ == '__main__':
