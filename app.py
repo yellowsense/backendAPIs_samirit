@@ -1715,5 +1715,11 @@ def get_matching_providers():
     else:
         return jsonify({"providers": "No matching service providers found"})
 
+@app.route('/dynamic-greeting', methods=['GET'])
+def dynamic_greeting():
+    # Return plain text response
+    greeting_text = "Hello, Happy New Year, and welcome to Yellowsense"
+    return greeting_text
+
 if __name__ == '__main__':
     app.run(debug=True)
