@@ -1606,7 +1606,7 @@ def find_matching_service_providers(locations, services, start_time_str, region)
 
         # Initial part of the query
         query = """
-            SELECT ID, Name, Gender, Services, Locations, Timings, RATING, Region
+            SELECT ID, Name, Gender, Services, Locations,PhoneNumber, Timings, RATING, Region
             FROM maidreg
             WHERE CHARINDEX(?, Services COLLATE SQL_Latin1_General_CP1_CI_AS) > 0
         """
@@ -1672,6 +1672,7 @@ def find_matching_service_providers(locations, services, start_time_str, region)
                                 "ID": row.ID,
                                 "Name": row.Name,
                                 "Gender": row.Gender,
+                                "PhoneNumber":row.PhoneNumber,
                                 "Services": row_services,
                                 "Locations": row_locations,
                                 "Region": row_region,
