@@ -338,7 +338,7 @@ def confirm_maid_booking():
         house_size = booking_details.get('HouseSize')
         complete_address = booking_details.get('CompleteAddress')
         user_phone_number = booking_details.get('UserPhoneNumber')
-        
+
         cursor.execute("""
             INSERT INTO ServiceBookings
             (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
@@ -354,7 +354,20 @@ def confirm_maid_booking():
             apartment,StartDate, start_time, special_requirements, house_size, complete_address, user_phone_number
         )
 
-        return jsonify({'message': 'Maid service booking confirmed and email sent successfully'})
+        # Call the dynamic greeting function directly
+        dynamic_greeting_data = {
+            'provider_name': provider_name,
+            'user_name': user_name,
+            'apartment': apartment,
+            'start_date': StartDate,
+            'start_time': start_time,
+            'service_type': 'maid'  # Specific to maid service
+        }
+        dynamic_greeting_response = dynamic_greeting(dynamic_greeting_data)
+
+        # You can also process the dynamic greeting response here if needed
+
+        return jsonify({'message': 'Maid service booking confirmed, email sent, and dynamic greeting called successfully'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -378,9 +391,9 @@ def send_maid_confirmation_email(
     body += f'User Phone Number: {user_phone_number}\n'
     
     body += '\nThank you for choosing our services!'
-    body +='\nThis is an auto generated mail. Please do not reply to this mail For any further queries feel free to contact us at support@yellowsense.in '
+    body += '\nThis is an auto-generated mail. Please do not reply to this mail. For any further queries, feel free to contact us at support@yellowsense.in '
     
-     # Send to the user and orders email
+    # Send to the user and orders email
     recipients = [recipient, 'orders@yellowsense.in']
     msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
