@@ -216,76 +216,11 @@ app.config['MAIL_PASSWORD'] = 'Confirmation2001#'
 app.config['MAIL_DEFAULT_SENDER'] = 'confirmation@yellowsense.in'
 mail = Mail(app)
 
-# Assuming you have a dynamic greeting function
-def dynamic_greeting(user_name, apartment, start_date, start_time, provider_name):
-    service_type = 'nanny'  # You can modify this dynamically based on the service type
-    greeting_text = f"Hi {provider_name},\n\nWelcome to Yellowsense! Someone called {user_name} from {apartment} apartment has booked for your {service_type} service to start work from {start_time} on {start_date}.\n"
-    greeting_text += "Please confirm the booking by pressing one. To reject, press two."
-    return greeting_text
-
-# Assuming you have a function to send email confirmation
-def send_confirmation_email(recipient, provider_name, service_type, user_name,
-                            apartment, StartDate, start_time, special_requirements, child_number, user_address):
-    subject = 'Booking Confirmation'
-    body = f'Dear {user_name},\n\nYour booking with {provider_name} for {service_type} has been confirmed.\n\nBooking Details:\n\n'
-    body += f'Provider Name: {provider_name}\n'
-    body += f'Service Type: {service_type}\n'
-    body += f'User Name: {user_name}\n'
-    body += f'Apartment: {apartment}\n'
-    body += f'Start Date: {StartDate}\n'
-    body += f'Start Time: {start_time}\n'
-    body += f'Special Requirements: {special_requirements}\n'
-    body += f'Child Number: {child_number}\n'
-    body += f'User Address: {user_address}\n'
-    body += '\nThank you for choosing our services!'
-    body += '\nThis is an auto-generated mail. Please do not reply to this mail. For any further queries, feel free to contact us at support@yellowsense.in'
-    recipients = [recipient, 'orders@yellowsense.in']
-    msg = Message(subject, recipients=recipients, body=body)
-    mail.send(msg)
-
-# Function to call dynamic greeting API
-def call_dynamic_greeting(user_name, apartment, start_date, start_time, provider_name):
-    try:
-        response = app.test_client().post('/dynamic_greeting', json={
-            'user_name': user_name,
-            'apartment': apartment,
-            'start_date': start_date,
-            'start_time': start_time,
-            'provider_name': provider_name
-        })
-        return response.get_data(as_text=True)
-    except Exception as e:
-        return str(e)
-
-# Dynamic greeting API
-@app.route('/dynamic_greeting', methods=['POST'])
-@cross_origin()
-def dynamic_greeting_api():
-    try:
-        user_name = request.json.get('user_name')
-        apartment = request.json.get('apartment')
-        start_date = request.json.get('start_date')
-        start_time = request.json.get('start_time')
-        provider_name = request.json.get('provider_name')
-
-        greeting_text = dynamic_greeting(
-            user_name=user_name,
-            apartment=apartment,
-            start_date=start_date,
-            start_time=start_time,
-            provider_name=provider_name
-        )
-
-        return Response(greeting_text, content_type='text/plain; charset=utf-8')
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# API for confirming nanny booking
 @app.route('/confirm_nanny_booking', methods=['POST'])
 @cross_origin()
 def confirm_nanny_booking():
     try:
-        booking_details = request.json
+        booking_details = request.json  # Assuming the data is sent as JSON in the request body
 
         # Extract relevant details from the booking data
         provider_name = booking_details.get('ProviderName')
@@ -299,7 +234,6 @@ def confirm_nanny_booking():
         child_number = booking_details.get('ChildNumber')
         user_address = booking_details.get('UserAddress')
 
-        # Insert into the database
         cursor.execute("""
             INSERT INTO ServiceBookings
             (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
@@ -312,29 +246,46 @@ def confirm_nanny_booking():
         # Send confirmation email to the customer
         send_confirmation_email(
             user_email, provider_name, service_type, user_name,
-            apartment, StartDate, start_time, special_requirements, child_number, user_address
+            apartment, StartDate,start_time, special_requirements, child_number, user_address
         )
 
-        # Call dynamic greeting API and get the greeting text
-        greeting_text = call_dynamic_greeting(
-            user_name=user_name,
-            apartment=apartment,
-            start_date=StartDate,
-            start_time=start_time,
-            provider_name=provider_name
-        )
+        # You can also send confirmation emails to the respective service providers here
 
-        # Return the response with the greeting text
-        return jsonify({'message': 'Booking confirmed and email sent successfully', 'greeting_text': greeting_text})
+        return jsonify({'message': 'Booking confirmed and email sent successfully'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# API for confirming maid booking
+def send_confirmation_email(
+    recipient, provider_name, service_type, user_name,
+    apartment,StartDate, start_time, special_requirements, child_number, user_address
+):
+    subject = 'Booking Confirmation'
+    
+    # Format the booking details for the email body
+    body = f'Dear {user_name},\n\nYour booking with {provider_name} for {service_type} has been confirmed.\n\nBooking Details:\n\n'
+    body += f'Provider Name: {provider_name}\n'
+    body += f'Service Type: {service_type}\n'
+    body += f'User Name: {user_name}\n'
+    body += f'Apartment: {apartment}\n'
+    body += f'Start Date: {StartDate}\n'
+    body += f'Start Time: {start_time}\n'
+    body += f'Special Requirements: {special_requirements}\n'
+    body += f'Child Number: {child_number}\n'
+    body += f'User Address: {user_address}\n'
+    
+    body += '\nThank you for choosing our services!'
+    body +='\nThis is an auto generated mail. Please do not reply to this mail For any further queries feel free to contact us at support@yellowsense.in '
+    
+     # Send to the user and orders email
+    recipients = [recipient, 'orders@yellowsense.in']
+    msg = Message(subject, recipients=recipients, body=body)
+    mail.send(msg)
+
 @app.route('/confirm_maid_booking', methods=['POST'])
 @cross_origin()
 def confirm_maid_booking():
     try:
-        booking_details = request.json
+        booking_details = request.json  # Assuming the data is sent as JSON in the request body
 
         # Extract relevant details from the booking data
         provider_name = booking_details.get('ProviderName')
@@ -348,8 +299,7 @@ def confirm_maid_booking():
         house_size = booking_details.get('HouseSize')
         complete_address = booking_details.get('CompleteAddress')
         user_phone_number = booking_details.get('UserPhoneNumber')
-
-        # Insert into the database
+        
         cursor.execute("""
             INSERT INTO ServiceBookings
             (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
@@ -360,31 +310,47 @@ def confirm_maid_booking():
         conn.commit()
 
         # Send confirmation email to the customer
-        send_confirmation_email(
+        send_maid_confirmation_email(
             user_email, provider_name, service_type, user_name,
-            apartment, StartDate, start_time, special_requirements, house_size, complete_address, user_phone_number
+            apartment,StartDate, start_time, special_requirements, house_size, complete_address, user_phone_number
         )
 
-        # Call dynamic greeting API and get the greeting text
-        greeting_text = call_dynamic_greeting(
-            user_name=user_name,
-            apartment=apartment,
-            start_date=StartDate,
-            start_time=start_time,
-            provider_name=provider_name
-        )
-
-        # Return the response with the greeting text
-        return jsonify({'message': 'Maid service booking confirmed and email sent successfully', 'greeting_text': greeting_text})
+        return jsonify({'message': 'Maid service booking confirmed and email sent successfully'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# API for confirming cook booking
+def send_maid_confirmation_email(
+    recipient, provider_name, service_type, user_name,
+    apartment,StartDate, start_time, special_requirements, house_size, complete_address, user_phone_number
+):
+    subject = 'Maid Service Booking Confirmation'
+    
+    # Format the booking details for the email body
+    body = f'Dear {user_name},\n\nYour maid service booking with {provider_name} has been confirmed.\n\nBooking Details:\n\n'
+    body += f'Provider Name: {provider_name}\n'
+    body += f'Service Type: {service_type}\n'
+    body += f'User Name: {user_name}\n'
+    body += f'Apartment: {apartment}\n'
+    body += f'Start Date: {StartDate}\n'
+    body += f'Start Time: {start_time}\n'
+    body += f'Special Requirements: {special_requirements}\n'
+    body += f'House Size: {house_size}\n'
+    body += f'Complete Address: {complete_address}\n'
+    body += f'User Phone Number: {user_phone_number}\n'
+    
+    body += '\nThank you for choosing our services!'
+    body +='\nThis is an auto generated mail. Please do not reply to this mail For any further queries feel free to contact us at support@yellowsense.in '
+    
+     # Send to the user and orders email
+    recipients = [recipient, 'orders@yellowsense.in']
+    msg = Message(subject, recipients=recipients, body=body)
+    mail.send(msg)
+
 @app.route('/confirm_cook_booking', methods=['POST'])
 @cross_origin()
 def confirm_cook_booking():
     try:
-        booking_details = request.json
+        booking_details = request.json  # Assuming the data is sent as JSON in the request body
 
         # Extract relevant details from the booking data
         provider_name = booking_details.get('ProviderName')
@@ -399,7 +365,6 @@ def confirm_cook_booking():
         user_address = booking_details.get('UserAddress')
         user_phone_number = booking_details.get('UserPhoneNumber')
 
-        # Insert into the database
         cursor.execute("""
             INSERT INTO ServiceBookings
             (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
@@ -410,25 +375,43 @@ def confirm_cook_booking():
         conn.commit()
 
         # Send confirmation email to the customer
-        send_confirmation_email(
+        send_cook_confirmation_email(
             user_email, provider_name, service_type, user_name,
-            apartment, StartDate, start_time, special_requirements, food_preferences, user_address, user_phone_number
+            apartment,StartDate, start_time, special_requirements, food_preferences, user_address, user_phone_number
         )
 
-        # Call dynamic greeting API and get the greeting text
-        greeting_text = call_dynamic_greeting(
-            user_name=user_name,
-            apartment=apartment,
-            start_date=StartDate,
-            start_time=start_time,
-            provider_name=provider_name
-        )
-
-        # Return the response with the greeting text
-        return jsonify({'message': 'Cook service booking confirmed and email sent successfully', 'greeting_text': greeting_text})
+        return jsonify({'message': 'Cook service booking confirmed and email sent successfully'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-        
+
+def send_cook_confirmation_email(
+    recipient, provider_name, service_type, user_name,
+    apartment,StartDate, start_time, special_requirements, food_preferences, user_address, user_phone_number
+):
+    subject = 'Cook Service Booking Confirmation'
+    
+    # Format the booking details for the email body
+    body = f'Dear {user_name},\n\nYour cook service booking with {provider_name} has been confirmed.\n\nBooking Details:\n\n'
+    body += f'Provider Name: {provider_name}\n'
+    body += f'Service Type: {service_type}\n'
+    body += f'User Name: {user_name}\n'
+    body += f'Apartment: {apartment}\n'
+    body += f'Start Date: {StartDate}\n'
+    body += f'Start Time: {start_time}\n'
+    body += f'Special Requirements: {special_requirements}\n'
+    body += f'Food Preferences: {food_preferences}\n'
+    body += f'User Address: {user_address}\n'
+    body += f'User Phone Number: {user_phone_number}\n'
+    
+    body += '\nThank you for choosing our services!'
+    body +='\nThis is an auto generated mail. Please do not reply to this mail For any further queries feel free to contact us at support@yellowsense.in '
+
+    
+    # Send to the user and orders email
+    recipients = [recipient, 'orders@yellowsense.in']
+    msg = Message(subject, recipients=recipients, body=body)
+    mail.send(msg)
+
 @app.route('/signin', methods=['POST'])
 @cross_origin()
 def signin():
