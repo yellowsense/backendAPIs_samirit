@@ -429,10 +429,23 @@ def confirm_cook_booking():
         # Send confirmation email to the customer
         send_cook_confirmation_email(
             user_email, provider_name, service_type, user_name,
-            apartment,StartDate, start_time, special_requirements, food_preferences, user_address, user_phone_number
+            apartment, StartDate, start_time, special_requirements, food_preferences, user_address, user_phone_number
         )
 
-        return jsonify({'message': 'Cook service booking confirmed and email sent successfully'})
+        # Call the dynamic greeting function directly
+        dynamic_greeting_data = {
+            'provider_name': provider_name,
+            'user_name': user_name,
+            'apartment': apartment,
+            'start_date': StartDate,
+            'start_time': start_time,
+            'service_type': 'cook'  # Specific to cook service
+        }
+        dynamic_greeting_response = dynamic_greeting(dynamic_greeting_data)
+
+        # You can also process the dynamic greeting response here if needed
+
+        return jsonify({'message': 'Cook service booking confirmed, email sent, and dynamic greeting called successfully'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -463,6 +476,7 @@ def send_cook_confirmation_email(
     recipients = [recipient, 'orders@yellowsense.in']
     msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
+
 
 @app.route('/signin', methods=['POST'])
 @cross_origin()
