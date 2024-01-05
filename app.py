@@ -216,7 +216,7 @@ app.config['MAIL_PASSWORD'] = 'Confirmation2001#'
 app.config['MAIL_DEFAULT_SENDER'] = 'confirmation@yellowsense.in'
 mail = Mail(app)
 
-@app.route('/dynamic-greeting', methods=['POST'])
+@app.route('/dynamic-greeting', methods=['POST','GET'])
 def dynamic_greeting():
     try:
         # Extract details from the JSON data in the request body
@@ -243,7 +243,7 @@ def dynamic_greeting():
     except Exception as e:
         return Response({'error': str(e)}, status=500, content_type='application/json')
 
-@app.route('/confirm_nanny_booking', methods=['POST'])
+@app.route('/confirm_nanny_booking', methods=['POST','GET'])
 @cross_origin()
 def confirm_nanny_booking():
     try:
@@ -320,7 +320,7 @@ def send_confirmation_email(
     msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
 
-@app.route('/confirm_maid_booking', methods=['POST'])
+@app.route('/confirm_maid_booking', methods=['POST','GET'])
 @cross_origin()
 def confirm_maid_booking():
     try:
@@ -398,7 +398,7 @@ def send_maid_confirmation_email(
     msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
 
-@app.route('/confirm_cook_booking', methods=['POST'])
+@app.route('/confirm_cook_booking', methods=['POST','GET'])
 @cross_origin()
 def confirm_cook_booking():
     try:
