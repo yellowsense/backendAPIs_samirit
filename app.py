@@ -216,34 +216,17 @@ app.config['MAIL_PASSWORD'] = 'Confirmation2001#'
 app.config['MAIL_DEFAULT_SENDER'] = 'confirmation@yellowsense.in'
 mail = Mail(app)
 
-@app.route('/dynamic-greeting', methods=['POST','GET'])
-def dynamic_greeting():
+def dynamic_greeting(provider_name, user_name, apartment, start_date, start_time, service_type):
     try:
-        # Extract details from the JSON data in the request body
-        request_data = request.json
-        provider_name = request_data.get('provider_name')
-        user_name = request_data.get('user_name')
-        apartment = request_data.get('apartment')
-        start_date = request_data.get('start_date')
-        start_time = request_data.get('start_time')
-        service_type = request_data.get('service_type')  # Adjust the key as needed
-
-        greeting_text = "Hi {provider_name},\n\nWelcome to Yellowsense! Someone called {user_name} from {apartment} apartment has booked for your {service_type} service to start work from {start_time} on {start_date}.\n"
+        greeting_text = f"Hi {provider_name},\n\nWelcome to Yellowsense! Someone called {user_name} from {apartment} apartment has booked for your {service_type} service to start work from {start_time} on {start_date}.\n"
         greeting_text += "Please confirm the booking by pressing one. To reject, press two."
 
-        return Response(greeting_text.format(
-            provider_name=provider_name,
-            user_name=user_name,
-            apartment=apartment,
-            start_date=start_date,
-            start_time=start_time,
-            service_type=service_type
-        ), content_type='text/plain; charset=utf-8')
+        return greeting_text
 
     except Exception as e:
-        return Response({'error': str(e)}, status=500, content_type='application/json')
+        return {'error': str(e)}
 
-@app.route('/confirm_nanny_booking', methods=['POST','GET'])
+@app.route('/confirm_nanny_booking', methods=['POST', 'GET'])
 @cross_origin()
 def confirm_nanny_booking():
     try:
@@ -261,6 +244,7 @@ def confirm_nanny_booking():
         child_number = booking_details.get('ChildNumber')
         user_address = booking_details.get('UserAddress')
 
+        # Save in the database
         cursor.execute("""
             INSERT INTO ServiceBookings
             (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
@@ -276,20 +260,15 @@ def confirm_nanny_booking():
             apartment, StartDate, start_time, special_requirements, child_number, user_address
         )
 
-        # Call the dynamic greeting function directly
-        dynamic_greeting_data = {
-            'provider_name': provider_name,
-            'user_name': user_name,
-            'apartment': apartment,
-            'start_date': StartDate,
-            'start_time': start_time,
-            'service_type': 'nanny'  # Specific to nanny service
-        }
-        dynamic_greeting_response = dynamic_greeting()
+        if request.method == 'GET':
+            # Call the dynamic greeting function directly
+            dynamic_greeting_response = dynamic_greeting(provider_name, user_name, apartment, StartDate, start_time, service_type)
 
-        # You can also process the dynamic greeting response here if needed
-
-        return jsonify({'message': 'Booking confirmed, email sent, and dynamic greeting called successfully'})
+            # Return the dynamic greeting response in plain text for GET requests
+            return Response(dynamic_greeting_response, content_type='text/plain; charset=utf-8')
+        else:
+            # Return a message for other request methods
+            return jsonify({'message': 'Booking confirmed, email sent'})
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -320,7 +299,7 @@ def send_confirmation_email(
     msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
 
-@app.route('/confirm_maid_booking', methods=['POST','GET'])
+@app.route('/confirm_maid_booking', methods=['POST', 'GET'])
 @cross_origin()
 def confirm_maid_booking():
     try:
@@ -339,6 +318,7 @@ def confirm_maid_booking():
         complete_address = booking_details.get('CompleteAddress')
         user_phone_number = booking_details.get('UserPhoneNumber')
 
+        # Save in the database
         cursor.execute("""
             INSERT INTO ServiceBookings
             (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
@@ -351,23 +331,21 @@ def confirm_maid_booking():
         # Send confirmation email to the customer
         send_maid_confirmation_email(
             user_email, provider_name, service_type, user_name,
-            apartment,StartDate, start_time, special_requirements, house_size, complete_address, user_phone_number
+            apartment, StartDate, start_time, special_requirements, house_size, complete_address, user_phone_number
         )
 
-        # Call the dynamic greeting function directly
-        dynamic_greeting_data = {
-            'provider_name': provider_name,
-            'user_name': user_name,
-            'apartment': apartment,
-            'start_date': StartDate,
-            'start_time': start_time,
-            'service_type': 'maid'  # Specific to maid service
-        }
-        dynamic_greeting_response = dynamic_greeting(dynamic_greeting_data)
+        if request.method == 'GET':
+            # Call the dynamic greeting function directly
+            dynamic_greeting_response = dynamic_greeting(
+                provider_name, user_name, apartment, StartDate, start_time, service_type
+            )
 
-        # You can also process the dynamic greeting response here if needed
+            # Return the dynamic greeting response in plain text for GET requests
+            return Response(dynamic_greeting_response, content_type='text/plain; charset=utf-8')
+        else:
+            # Return a message for other request methods
+            return jsonify({'message': 'Maid service booking confirmed, email sent'})
 
-        return jsonify({'message': 'Maid service booking confirmed, email sent, and dynamic greeting called successfully'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -398,7 +376,7 @@ def send_maid_confirmation_email(
     msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
 
-@app.route('/confirm_cook_booking', methods=['POST','GET'])
+@app.route('/confirm_cook_booking', methods=['POST', 'GET'])
 @cross_origin()
 def confirm_cook_booking():
     try:
@@ -417,6 +395,7 @@ def confirm_cook_booking():
         user_address = booking_details.get('UserAddress')
         user_phone_number = booking_details.get('UserPhoneNumber')
 
+        # Save in the database
         cursor.execute("""
             INSERT INTO ServiceBookings
             (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
@@ -432,20 +411,18 @@ def confirm_cook_booking():
             apartment, StartDate, start_time, special_requirements, food_preferences, user_address, user_phone_number
         )
 
-        # Call the dynamic greeting function directly
-        dynamic_greeting_data = {
-            'provider_name': provider_name,
-            'user_name': user_name,
-            'apartment': apartment,
-            'start_date': StartDate,
-            'start_time': start_time,
-            'service_type': 'cook'  # Specific to cook service
-        }
-        dynamic_greeting_response = dynamic_greeting(dynamic_greeting_data)
+        if request.method == 'GET':
+            # Call the dynamic greeting function directly
+            dynamic_greeting_response = dynamic_greeting(
+                provider_name, user_name, apartment, StartDate, start_time, service_type
+            )
 
-        # You can also process the dynamic greeting response here if needed
+            # Return the dynamic greeting response in plain text for GET requests
+            return Response(dynamic_greeting_response, content_type='text/plain; charset=utf-8')
+        else:
+            # Return a message for other request methods
+            return jsonify({'message': 'Cook service booking confirmed, email sent'})
 
-        return jsonify({'message': 'Cook service booking confirmed, email sent, and dynamic greeting called successfully'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
