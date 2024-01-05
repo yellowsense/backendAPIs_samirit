@@ -217,7 +217,7 @@ app.config['MAIL_DEFAULT_SENDER'] = 'confirmation@yellowsense.in'
 mail = Mail(app)
 
 @app.route('/dynamic-greeting', methods=['POST','GET'])
-def dynamic_greeting(provider_name, user_name, apartment, start_date, start_time, service_type):
+def dynamic_greeting():
     try:
         # Extract details from the JSON data in the request body
         request_data = request.json
