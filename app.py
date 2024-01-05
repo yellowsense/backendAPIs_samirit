@@ -1715,6 +1715,46 @@ def get_matching_providers():
         return jsonify({"providers": matching_providers})
     else:
         return jsonify({"providers": "No matching service providers found"})
+@app.route('/get_maid_by_phone', methods=['GET'])
+@cross_origin()
+def get_maid_by_phone():
+    try:
+        phone_number = request.args.get('phone_number')
+
+        if not phone_number:
+            return jsonify({"error": "Missing 'phone_number' parameter"}), 400
+
+        # Check if the maid with the given phone number exists
+        cursor.execute('SELECT * FROM maidreg WHERE PhoneNumber = ?', (phone_number,))
+        maid = cursor.fetchone()
+
+        if not maid:
+            return jsonify({"error": "Maid not found for the provided phone number"}), 404
+
+        # Convert the result to a dictionary for JSON response
+        maid_details = {
+            "ID": maid.ID,
+            "Name": maid.Name,
+            "Gender": maid.Gender,
+            "PhoneNumber": maid.PhoneNumber,
+            "Services": maid.Services.split(',') if maid.Services else [],
+            "Locations": maid.Locations.split(',') if maid.Locations else [],
+            "Timings": maid.Timings.split(',') if maid.Timings else [],
+            "Rating": maid.RATING,
+            "Region": maid.Region.split(',') if maid.Region else [],
+            "Languages":maid.languages.split(',') if maid.languages else [],
+            "AadharNumber":maid.AadharNumber,
+            "years_of_experience":maid.years_of_experience,
+            "Sunday_availability":maid.Sunday_availability,
+            "Description":maid.description,
+            # ... (add other fields as needed)
+        }
+
+        return jsonify({"maid_details": maid_details})
+
+    except Exception as e:
+        app.logger.error(str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
 
 @app.route('/dynamic-greeting', methods=['GET'])
 def dynamic_greeting():
