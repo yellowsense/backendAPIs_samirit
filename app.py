@@ -216,6 +216,33 @@ app.config['MAIL_PASSWORD'] = 'Confirmation2001#'
 app.config['MAIL_DEFAULT_SENDER'] = 'confirmation@yellowsense.in'
 mail = Mail(app)
 
+@app.route('/dynamic-greeting', methods=['POST'])
+def dynamic_greeting():
+    try:
+        # Extract details from the JSON data in the request body
+        request_data = request.json
+        provider_name = request_data.get('provider_name')
+        user_name = request_data.get('user_name')
+        apartment = request_data.get('apartment')
+        start_date = request_data.get('start_date')
+        start_time = request_data.get('start_time')
+        service_type = request_data.get('service_type')  # Adjust the key as needed
+
+        greeting_text = "Hi {provider_name},\n\nWelcome to Yellowsense! Someone called {user_name} from {apartment} apartment has booked for your {service_type} service to start work from {start_time} on {start_date}.\n"
+        greeting_text += "Please confirm the booking by pressing one. To reject, press two."
+
+        return Response(greeting_text.format(
+            provider_name=provider_name,
+            user_name=user_name,
+            apartment=apartment,
+            start_date=start_date,
+            start_time=start_time,
+            service_type=service_type
+        ), content_type='text/plain; charset=utf-8')
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=500, content_type='application/json')
+
 @app.route('/confirm_nanny_booking', methods=['POST'])
 @cross_origin()
 def confirm_nanny_booking():
@@ -246,18 +273,30 @@ def confirm_nanny_booking():
         # Send confirmation email to the customer
         send_confirmation_email(
             user_email, provider_name, service_type, user_name,
-            apartment, StartDate,start_time, special_requirements, child_number, user_address
+            apartment, StartDate, start_time, special_requirements, child_number, user_address
         )
 
-        # You can also send confirmation emails to the respective service providers here
+        # Call the dynamic greeting function directly
+        dynamic_greeting_data = {
+            'provider_name': provider_name,
+            'user_name': user_name,
+            'apartment': apartment,
+            'start_date': StartDate,
+            'start_time': start_time,
+            'service_type': 'nanny'  # Specific to nanny service
+        }
+        dynamic_greeting_response = dynamic_greeting()
 
-        return jsonify({'message': 'Booking confirmed and email sent successfully'})
+        # You can also process the dynamic greeting response here if needed
+
+        return jsonify({'message': 'Booking confirmed, email sent, and dynamic greeting called successfully'})
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 def send_confirmation_email(
     recipient, provider_name, service_type, user_name,
-    apartment,StartDate, start_time, special_requirements, child_number, user_address
+    apartment, StartDate, start_time, special_requirements, child_number, user_address
 ):
     subject = 'Booking Confirmation'
     
@@ -274,9 +313,9 @@ def send_confirmation_email(
     body += f'User Address: {user_address}\n'
     
     body += '\nThank you for choosing our services!'
-    body +='\nThis is an auto generated mail. Please do not reply to this mail For any further queries feel free to contact us at support@yellowsense.in '
+    body += '\nThis is an auto-generated mail. Please do not reply to this mail. For any further queries, feel free to contact us at support@yellowsense.in '
     
-     # Send to the user and orders email
+    # Send to the user and orders email
     recipients = [recipient, 'orders@yellowsense.in']
     msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
@@ -299,7 +338,7 @@ def confirm_maid_booking():
         house_size = booking_details.get('HouseSize')
         complete_address = booking_details.get('CompleteAddress')
         user_phone_number = booking_details.get('UserPhoneNumber')
-        
+
         cursor.execute("""
             INSERT INTO ServiceBookings
             (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
@@ -315,7 +354,20 @@ def confirm_maid_booking():
             apartment,StartDate, start_time, special_requirements, house_size, complete_address, user_phone_number
         )
 
-        return jsonify({'message': 'Maid service booking confirmed and email sent successfully'})
+        # Call the dynamic greeting function directly
+        dynamic_greeting_data = {
+            'provider_name': provider_name,
+            'user_name': user_name,
+            'apartment': apartment,
+            'start_date': StartDate,
+            'start_time': start_time,
+            'service_type': 'maid'  # Specific to maid service
+        }
+        dynamic_greeting_response = dynamic_greeting(dynamic_greeting_data)
+
+        # You can also process the dynamic greeting response here if needed
+
+        return jsonify({'message': 'Maid service booking confirmed, email sent, and dynamic greeting called successfully'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -339,9 +391,9 @@ def send_maid_confirmation_email(
     body += f'User Phone Number: {user_phone_number}\n'
     
     body += '\nThank you for choosing our services!'
-    body +='\nThis is an auto generated mail. Please do not reply to this mail For any further queries feel free to contact us at support@yellowsense.in '
+    body += '\nThis is an auto-generated mail. Please do not reply to this mail. For any further queries, feel free to contact us at support@yellowsense.in '
     
-     # Send to the user and orders email
+    # Send to the user and orders email
     recipients = [recipient, 'orders@yellowsense.in']
     msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
@@ -377,10 +429,23 @@ def confirm_cook_booking():
         # Send confirmation email to the customer
         send_cook_confirmation_email(
             user_email, provider_name, service_type, user_name,
-            apartment,StartDate, start_time, special_requirements, food_preferences, user_address, user_phone_number
+            apartment, StartDate, start_time, special_requirements, food_preferences, user_address, user_phone_number
         )
 
-        return jsonify({'message': 'Cook service booking confirmed and email sent successfully'})
+        # Call the dynamic greeting function directly
+        dynamic_greeting_data = {
+            'provider_name': provider_name,
+            'user_name': user_name,
+            'apartment': apartment,
+            'start_date': StartDate,
+            'start_time': start_time,
+            'service_type': 'cook'  # Specific to cook service
+        }
+        dynamic_greeting_response = dynamic_greeting(dynamic_greeting_data)
+
+        # You can also process the dynamic greeting response here if needed
+
+        return jsonify({'message': 'Cook service booking confirmed, email sent, and dynamic greeting called successfully'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -411,6 +476,7 @@ def send_cook_confirmation_email(
     recipients = [recipient, 'orders@yellowsense.in']
     msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
+
 
 @app.route('/signin', methods=['POST'])
 @cross_origin()
@@ -1606,7 +1672,7 @@ def find_matching_service_providers(locations, services, start_time_str, region)
 
         # Initial part of the query
         query = """
-            SELECT ID, Name, Gender, Services, Locations, Timings, RATING, Region
+            SELECT ID, Name, Gender, Services, Locations,PhoneNumber, Timings, RATING, Region
             FROM maidreg
             WHERE CHARINDEX(?, Services COLLATE SQL_Latin1_General_CP1_CI_AS) > 0
         """
@@ -1672,6 +1738,7 @@ def find_matching_service_providers(locations, services, start_time_str, region)
                                 "ID": row.ID,
                                 "Name": row.Name,
                                 "Gender": row.Gender,
+                                "PhoneNumber":row.PhoneNumber,
                                 "Services": row_services,
                                 "Locations": row_locations,
                                 "Region": row_region,
@@ -1715,6 +1782,7 @@ def get_matching_providers():
         return jsonify({"providers": matching_providers})
     else:
         return jsonify({"providers": "No matching service providers found"})
+
 @app.route('/get_maid_by_phone', methods=['GET'])
 @cross_origin()
 def get_maid_by_phone():
@@ -1755,78 +1823,6 @@ def get_maid_by_phone():
     except Exception as e:
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
-
-@app.route('/dynamic-greeting', methods=['GET'])
-def dynamic_greeting():
-    # Return plain text response
-    greeting_text = "Hello, Happy New Year, and welcome to Yellowsense. You have received a booking for your service. Please press one to accept and two to reject."
-    return Response(greeting_text, content_type='text/plain; charset=utf-8')
-
-@app.route('/dynamic-greeting/maid', methods=['GET'])
-def dynamic_greeting_maid():
-    # Extract details from query parameters
-    provider_name = request.args.get('provider_name')
-    user_name = request.args.get('user_name')
-    apartment = request.args.get('apartment')
-    start_date = request.args.get('start_date')
-    start_time = request.args.get('start_time')
-    service_type = 'maid'  # Specific to maid service
-
-    greeting_text = "Hi {provider_name},\n\nWelcome to Yellowsense! Someone called {user_name} from {apartment} apartment has booked for your {service_type} service to start work from {start_time} on {start_date}.\n"
-    greeting_text += "Please confirm the booking by pressing one. To reject, press two."
-
-    return Response(greeting_text.format(
-        provider_name=provider_name,
-        user_name=user_name,
-        apartment=apartment,
-        start_date=start_date,
-        start_time=start_time,
-        service_type=service_type
-    ), content_type='text/plain; charset=utf-8')
-
-@app.route('/dynamic-greeting/cook', methods=['GET'])
-def dynamic_greeting_cook():
-    # Extract details from query parameters
-    provider_name = request.args.get('provider_name')
-    user_name = request.args.get('user_name')
-    apartment = request.args.get('apartment')
-    start_date = request.args.get('start_date')
-    start_time = request.args.get('start_time')
-    service_type = 'cook'  # Specific to cook service
-
-    greeting_text = "Hi {provider_name},\n\nWelcome to Yellowsense! Someone called {user_name} from {apartment} apartment has booked for your {service_type} service to start work from {start_time} on {start_date}.\n"
-    greeting_text += "Please confirm the booking by pressing one. To reject, press two."
-
-    return Response(greeting_text.format(
-        provider_name=provider_name,
-        user_name=user_name,
-        apartment=apartment,
-        start_date=start_date,
-        start_time=start_time,
-        service_type=service_type
-    ), content_type='text/plain; charset=utf-8')
-
-@app.route('/dynamic-greeting/nanny', methods=['GET'])
-def dynamic_greeting_nanny():
-    # Extract details from query parameters
-    provider_name = request.args.get('provider_name')
-    user_name = request.args.get('user_name')
-    apartment = request.args.get('apartment')
-    start_date = request.args.get('start_date')
-    start_time = request.args.get('start_time')
-    service_type = 'nanny'  # Specific to nanny service
-
-    greeting_text = "Hi {provider_name},\n\nWelcome to Yellowsense! Someone called {user_name} from {apartment} apartment has booked for your {service_type} service to start work from {start_time} on {start_date}.\n"
-    greeting_text += "Please confirm the booking by pressing one. To reject, press two."
-
-    return Response(greeting_text.format(
-        provider_name=provider_name,
-        user_name=user_name,
-        apartment=apartment,
-        start_date=start_date,
-        start_time=start_time,
-        service_type=service_type
-    ), content_type='text/plain; charset=utf-8')
 
 
 if __name__ == '__main__':
