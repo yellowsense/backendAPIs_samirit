@@ -16,10 +16,8 @@ api_key = "3ccb0ac3919ccea8ecf9a4d5de2ed92633ba63795fc4755a"
 api_token = "3d26731864f6daf1a845b993e2fda685fe158a60ed003f04"
 subdomain = "api.exotel.com"
 account_sid = "yellowsense3"
-from_number = "6362298273"  # Your ExoPhone (Exotel Virtual Number) 
-to_number = "02248964153"  # The phone number that you want to call 
+from_number = "6362298273"  # Your ExoPhone (Exotel Virtual Number)
 ivr_app_id = "752086"
-ivr_url = f"http://{subdomain}/{account_sid}/exoml/start_voice/{ivr_app_id}"
 
 # Database connection setup
 SERVER = 'maidsqlppserver.database.windows.net'
@@ -1810,7 +1808,36 @@ def get_maid_by_phone():
     except Exception as e:
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
+        
+def make_outgoing_call(to_number):
+    try:
+        ivr_url = f"http://{subdomain}/{account_sid}/exoml/start_voice/{ivr_app_id}"
 
+        # Prepare data for the API request
+        data = {
+            'From': from_number,
+            'To': to_number,
+            'CallerId': to_number,
+            'Url': ivr_url,
+        }
+
+        # Construct the API endpoint
+        api_endpoint = f"https://{api_key}:{api_token}@{subdomain}/v1/Accounts/{account_sid}/Calls/connect.json"
+
+        # Make the API request
+        response = requests.post(api_endpoint, data=data)
+
+        # Check if the request was successful (status code 200)
+        if response.status_code == 200:
+            print("Outgoing call initiated successfully.")
+            # You may want to store the 'Sid' from the response for future reference or logging
+            call_sid = response.json().get('Call', {}).get('Sid')
+            print(f"Call SID: {call_sid}")
+        else:
+            print(f"Error: {response.status_code}, {response.text}")
+
+    except Exception as e:
+        print(f"Error making outgoing call: {str(e)}")
 
 if __name__ == '__main__':
     app.run(debug=True)
