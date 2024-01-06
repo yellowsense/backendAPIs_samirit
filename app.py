@@ -11,6 +11,16 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
+# Replace these values with your Exotel API credentials and other details
+api_key = "3ccb0ac3919ccea8ecf9a4d5de2ed92633ba63795fc4755a"
+api_token = "3d26731864f6daf1a845b993e2fda685fe158a60ed003f04"
+subdomain = "api.exotel.com"
+account_sid = "yellowsense3"
+from_number = "6362298273"  # Your ExoPhone (Exotel Virtual Number) 
+to_number = "02248964153"  # The phone number that you want to call 
+ivr_app_id = "752086"
+ivr_url = f"http://{subdomain}/{account_sid}/exoml/start_voice/{ivr_app_id}"
+
 # Database connection setup
 SERVER = 'maidsqlppserver.database.windows.net'
 DATABASE = 'miadsqlpp'
