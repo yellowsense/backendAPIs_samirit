@@ -76,8 +76,16 @@ def insert_maid():
         languages = data.get('languages')
         Region = data.get('Region')
 
-        # Execute the stored procedure
+        # Check if the phone number already exists in the database
         cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM maidreg WHERE PhoneNumber = ?", (phone_number,))
+        count = cursor.fetchone()[0]
+
+        if count > 0:
+            # Phone number already registered, return a message
+            return jsonify({"error": "Phone number already registered"}), 400
+
+        # Execute the stored procedure
         cursor.execute(
             "EXEC InsertMaidRegistration "
             "@AadharNumber = ?, "
