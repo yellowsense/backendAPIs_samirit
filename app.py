@@ -1840,8 +1840,7 @@ def initiate_outgoing_call(api_key, api_token, subdomain, account_sid, to_number
 @app.route('/initiate-call', methods=['POST'])
 def initiate_call():
     # Extract from_number from the query parameters
-    from_number = request.args.get('from_number')
-
+    from_number = "6362298273"
     # Replace these values with your Exotel API credentials and other constant details
     api_key = "3ccb0ac3919ccea8ecf9a4d5de2ed92633ba63795fc4755a"
     api_token = "3d26731864f6daf1a845b993e2fda685fe158a60ed003f04"
