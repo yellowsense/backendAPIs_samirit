@@ -1847,5 +1847,14 @@ def make_outgoing_call(to_number):
     except Exception as e:
         print(f"Error making outgoing call: {str(e)}")
 
+@app.route('/initiate_call', methods=['GET'])
+def initiate_call():
+    to_number = "recipient_phone_number"  # Replace with the actual recipient's phone number
+    try:
+        call_sid = make_outgoing_call(to_number)
+        return jsonify({"message": "Outgoing call initiated successfully", "call_sid": call_sid})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
 if __name__ == '__main__':
     app.run(debug=True)
