@@ -1809,27 +1809,26 @@ def get_maid_by_phone():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
-# Constants or fixed parameters
-API_KEY = "3ccb0ac3919ccea8ecf9a4d5de2ed92633ba63795fc4755a"
-API_TOKEN = "3d26731864f6daf1a845b993e2fda685fe158a60ed003f04"
-SUBDOMAIN = "api.exotel.com"
-ACCOUNT_SID = "yellowsense3"
-TO_NUMBER = "02248964153"
-IVR_APP_ID = "752086"
-
 def initiate_outgoing_call(from_number):
-    ivr_url = f"http://{SUBDOMAIN}/{ACCOUNT_SID}/exoml/start_voice/{IVR_APP_ID}"
-
+    # Replace these values with your Exotel API credentials and other details
+    api_key = "3ccb0ac3919ccea8ecf9a4d5de2ed92633ba63795fc4755a"
+    api_token = "3d26731864f6daf1a845b993e2fda685fe158a60ed003f04"
+    subdomain = "api.exotel.com"
+    account_sid = "yellowsense3"
+    to_number = "02248964153"  # The phone number that you want to call
+    ivr_app_id = "752086"
+    
     # Prepare data for the API request
+    ivr_url = f"http://{subdomain}/{account_sid}/exoml/start_voice/{ivr_app_id}"
     data = {
         'From': from_number,
-        'To': TO_NUMBER,
-        'CallerId': TO_NUMBER,
+        'To': to_number,
+        'CallerId': to_number,
         'Url': ivr_url,
     }
 
     # Construct the API endpoint
-    api_endpoint = f"https://{API_KEY}:{API_TOKEN}@{SUBDOMAIN}/v1/Accounts/{ACCOUNT_SID}/Calls/connect.json"
+    api_endpoint = f"https://{api_key}:{api_token}@{subdomain}/v1/Accounts/{account_sid}/Calls/connect.json"
 
     # Make the API request
     response = requests.post(api_endpoint, data=data)
@@ -1843,11 +1842,10 @@ def initiate_outgoing_call(from_number):
     else:
         print(f"Error: {response.status_code}, {response.text}")
 
-@app.route('/initiate_call/<from_number>', methods=['POST'])
+# API endpoint to initiate outgoing call
+@app.route('/initiate_call/<from_number>', methods=['GET'])
 def initiate_call(from_number):
-    print(request.method, request.url)  # Debugging statement
     initiate_outgoing_call(from_number)
-
     return jsonify({"message": "Outgoing call initiated."})
 
 if __name__ == '__main__':
