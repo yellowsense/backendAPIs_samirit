@@ -1809,15 +1809,6 @@ def get_maid_by_phone():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
-# Replace these values with your Exotel API credentials and other details
-api_key = "3ccb0ac3919ccea8ecf9a4d5de2ed92633ba63795fc4755a"
-api_token = "3d26731864f6daf1a845b993e2fda685fe158a60ed003f04"
-subdomain = "api.exotel.com"
-account_sid = "yellowsense3"
-from_number = "6362298273"  # Your ExoPhone (Exotel Virtual Number)
-ivr_app_id = "752086"
-ivr_url = f"http://{subdomain}/{account_sid}/exoml/start_voice/{ivr_app_id}"
-
 @app.route('/make_call', methods=['GET'])
 def make_call():
     import requests
@@ -1827,17 +1818,21 @@ def make_call():
     api_token = "3d26731864f6daf1a845b993e2fda685fe158a60ed003f04"
     subdomain = "api.exotel.com"
     account_sid = "yellowsense3"
-    from_number = "6362298273"  # Your ExoPhone (Exotel Virtual Number)
     to_number = "02248964153"  # The phone number that you want to call
     ivr_app_id = "752086"
-    ivr_url = f"http://{subdomain}/{account_sid}/exoml/start_voice/{ivr_app_id}"
+
+    # Get 'from_number' from the query parameters in the URL
+    from_number = request.args.get('from_number', '')
+
+    if not from_number:
+        return jsonify({"error": "Missing 'from_number' parameter in the URL"}), 400
 
     # Prepare data for the API request
     data = {
         'From': from_number,
         'To': to_number,
         'CallerId': to_number,
-        'Url': ivr_url,
+        'Url': f"http://{subdomain}/{account_sid}/exoml/start_voice/{ivr_app_id}",
     }
 
     # Construct the API endpoint
@@ -1853,6 +1848,9 @@ def make_call():
         return jsonify({"message": "Outgoing call initiated successfully.", "call_sid": call_sid}), 200
     else:
         return jsonify({"error": f"Error: {response.status_code}, {response.text}"}), response.status_code
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
