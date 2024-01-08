@@ -1808,51 +1808,6 @@ def get_maid_by_phone():
     except Exception as e:
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
-        
-def make_outgoing_call(to_number):
-    try:
-        ivr_url = f"http://{subdomain}/{account_sid}/exoml/start_voice/{ivr_app_id}"
-
-        # Prepare data for the API request
-        data = {
-            'From': from_number,
-            'To': to_number,
-            'CallerId': to_number,
-            'Url': ivr_url,
-        }
-
-        # Construct the API endpoint
-        api_endpoint = f"https://{api_key}:{api_token}@{subdomain}/v1/Accounts/{account_sid}/Calls/connect.json"
-
-        # Make the API request
-        response = requests.post(api_endpoint, data=data)
-
-        # Check if the request was successful (status code 200)
-        if response.status_code == 200:
-            print("Outgoing call initiated successfully.")
-            # You may want to store the 'Sid' from the response for future reference or logging
-            call_sid = response.json().get('Call', {}).get('Sid')
-            print(f"Call SID: {call_sid}")
-        else:
-            print(f"Error: {response.status_code}, {response.text}")
-
-    except Exception as e:
-        print(f"Error making outgoing call: {str(e)}")
-
-@app.route('/initiate_call', methods=['GET'])
-def initiate_call():
-    try:
-        # Get the recipient's phone number from the query parameter
-        to_number = request.args.get('to_number')
-
-        # Check if to_number is provided in the query parameter
-        if not to_number:
-            return jsonify({"error": "Recipient's phone number is required as a query parameter"}), 400
-
-        call_sid = make_outgoing_call(to_number)
-        return jsonify({"message": "Outgoing call initiated successfully", "call_sid": call_sid})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 # Constants or fixed parameters
 API_KEY = "3ccb0ac3919ccea8ecf9a4d5de2ed92633ba63795fc4755a"
