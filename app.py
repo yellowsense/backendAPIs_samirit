@@ -1845,7 +1845,7 @@ def initiate_outgoing_call(from_number):
 
 @app.route('/initiate_call/<from_number>', methods=['POST'])
 def initiate_call(from_number):
-    # Call the function with the provided from_number
+    print(request.method, request.url)  # Debugging statement
     initiate_outgoing_call(from_number)
 
     return jsonify({"message": "Outgoing call initiated."})
