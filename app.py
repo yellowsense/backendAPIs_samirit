@@ -11,14 +11,6 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-# Replace these values with your Exotel API credentials and other details
-api_key = "3ccb0ac3919ccea8ecf9a4d5de2ed92633ba63795fc4755a"
-api_token = "3d26731864f6daf1a845b993e2fda685fe158a60ed003f04"
-subdomain = "api.exotel.com"
-account_sid = "yellowsense3"
-from_number = "6362298273"  # Your ExoPhone (Exotel Virtual Number)
-ivr_app_id = "752086"
-
 # Database connection setup
 SERVER = 'maidsqlppserver.database.windows.net'
 DATABASE = 'miadsqlpp'
@@ -1861,6 +1853,47 @@ def initiate_call():
         return jsonify({"message": "Outgoing call initiated successfully", "call_sid": call_sid})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-        
+
+# Constants or fixed parameters
+API_KEY = "3ccb0ac3919ccea8ecf9a4d5de2ed92633ba63795fc4755a"
+API_TOKEN = "3d26731864f6daf1a845b993e2fda685fe158a60ed003f04"
+SUBDOMAIN = "api.exotel.com"
+ACCOUNT_SID = "yellowsense3"
+TO_NUMBER = "02248964153"
+IVR_APP_ID = "752086"
+
+def initiate_outgoing_call(from_number):
+    ivr_url = f"http://{SUBDOMAIN}/{ACCOUNT_SID}/exoml/start_voice/{IVR_APP_ID}"
+
+    # Prepare data for the API request
+    data = {
+        'From': from_number,
+        'To': TO_NUMBER,
+        'CallerId': TO_NUMBER,
+        'Url': ivr_url,
+    }
+
+    # Construct the API endpoint
+    api_endpoint = f"https://{API_KEY}:{API_TOKEN}@{SUBDOMAIN}/v1/Accounts/{ACCOUNT_SID}/Calls/connect.json"
+
+    # Make the API request
+    response = requests.post(api_endpoint, data=data)
+
+    # Check if the request was successful (status code 200)
+    if response.status_code == 200:
+        print("Outgoing call initiated successfully.")
+        # You may want to store the 'Sid' from the response for future reference or logging
+        call_sid = response.json().get('Call', {}).get('Sid')
+        print(f"Call SID: {call_sid}")
+    else:
+        print(f"Error: {response.status_code}, {response.text}")
+
+@app.route('/initiate_call/<from_number>', methods=['POST'])
+def initiate_call(from_number):
+    # Call the function with the provided from_number
+    initiate_outgoing_call(from_number)
+
+    return jsonify({"message": "Outgoing call initiated."})
+
 if __name__ == '__main__':
     app.run(debug=True)
