@@ -1809,6 +1809,12 @@ def get_maid_by_phone():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
+# API endpoint to initiate outgoing call
+@app.route('/initiate_call/<from_number>', methods=['GET'])
+def initiate_call(from_number):
+    initiate_outgoing_call(from_number)
+    return jsonify({"message": "Outgoing call initiated."})
+
 def initiate_outgoing_call(from_number):
     # Replace these values with your Exotel API credentials and other details
     api_key = "3ccb0ac3919ccea8ecf9a4d5de2ed92633ba63795fc4755a"
@@ -1841,12 +1847,6 @@ def initiate_outgoing_call(from_number):
         print(f"Call SID: {call_sid}")
     else:
         print(f"Error: {response.status_code}, {response.text}")
-
-# API endpoint to initiate outgoing call
-@app.route('/initiate_call/<from_number>', methods=['GET'])
-def initiate_call(from_number):
-    initiate_outgoing_call(from_number)
-    return jsonify({"message": "Outgoing call initiated."})
 
 if __name__ == '__main__':
     app.run(debug=True)
