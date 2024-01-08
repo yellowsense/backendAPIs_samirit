@@ -1849,8 +1849,14 @@ def make_outgoing_call(to_number):
 
 @app.route('/initiate_call', methods=['GET'])
 def initiate_call():
-    to_number = "recipient_phone_number"  # Replace with the actual recipient's phone number
     try:
+        # Get the recipient's phone number from the query parameter
+        to_number = request.args.get('to_number')
+
+        # Check if to_number is provided in the query parameter
+        if not to_number:
+            return jsonify({"error": "Recipient's phone number is required as a query parameter"}), 400
+
         call_sid = make_outgoing_call(to_number)
         return jsonify({"message": "Outgoing call initiated successfully", "call_sid": call_sid})
     except Exception as e:
