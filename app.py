@@ -1825,10 +1825,13 @@ def make_call():
     # Get the 'from_number' from the request
     from_number = request.json.get('from_number')
 
+    # Assuming 'to_number' remains constant, you can modify as needed
+    to_number = "02248964153"
+
     # Prepare data for the API request
     data = {
         'From': from_number,
-        'To': to_number,  # Assuming 'to_number' remains constant, you can modify as needed
+        'To': to_number,
         'CallerId': to_number,
         'Url': ivr_url,
     }
@@ -1846,6 +1849,6 @@ def make_call():
         return jsonify({"message": "Outgoing call initiated successfully.", "call_sid": call_sid}), 200
     else:
         return jsonify({"error": f"Error: {response.status_code}, {response.text}"}), response.status_code
-
+        
 if __name__ == '__main__':
     app.run(debug=True)
