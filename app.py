@@ -1809,13 +1809,25 @@ def get_maid_by_phone():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
-def initiate_outgoing_call(api_key, api_token, subdomain, account_sid, to_number, ivr_app_id, from_number):
+# Replace these values with your Exotel API credentials and other details
+api_key = "3ccb0ac3919ccea8ecf9a4d5de2ed92633ba63795fc4755a"
+api_token = "3d26731864f6daf1a845b993e2fda685fe158a60ed003f04"
+subdomain = "api.exotel.com"
+account_sid = "yellowsense3"
+from_number = "6362298273"  # Your ExoPhone (Exotel Virtual Number)
+ivr_app_id = "752086"
+ivr_url = f"http://{subdomain}/{account_sid}/exoml/start_voice/{ivr_app_id}"
+
+@app.route('/make_call', methods=['POST'])
+def make_call():
+    # Extract data from the incoming JSON request
+    data = request.get_json()
+
     # Prepare data for the API request
-    ivr_url = f"http://{subdomain}/{account_sid}/exoml/start_voice/{ivr_app_id}"
-    data = {
+    api_data = {
         'From': from_number,
-        'To': to_number,
-        'CallerId': to_number,
+        'To': data['to_number'],
+        'CallerId': data['caller_id'],
         'Url': ivr_url,
     }
 
@@ -1823,34 +1835,15 @@ def initiate_outgoing_call(api_key, api_token, subdomain, account_sid, to_number
     api_endpoint = f"https://{api_key}:{api_token}@{subdomain}/v1/Accounts/{account_sid}/Calls/connect.json"
 
     # Make the API request
-    response = requests.post(api_endpoint, data=data)
+    response = requests.post(api_endpoint, data=api_data)
 
     # Check if the request was successful (status code 200)
     if response.status_code == 200:
-        print("Outgoing call initiated successfully.")
         # You may want to store the 'Sid' from the response for future reference or logging
         call_sid = response.json().get('Call', {}).get('Sid')
-        print(f"Call SID: {call_sid}")
-        return jsonify({"status": "success", "call_sid": call_sid})
+        return jsonify({"message": "Outgoing call initiated successfully.", "call_sid": call_sid}), 200
     else:
-        error_message = f"Error: {response.status_code}, {response.text}"
-        print(error_message)
-        return jsonify({"status": "error", "error_message": error_message}), 500
-
-@app.route('/initiate-call', methods=['POST'])
-def initiate_call():
-    # Extract from_number from the query parameters
-    from_number = "6362298273"
-    # Replace these values with your Exotel API credentials and other constant details
-    api_key = "3ccb0ac3919ccea8ecf9a4d5de2ed92633ba63795fc4755a"
-    api_token = "3d26731864f6daf1a845b993e2fda685fe158a60ed003f04"
-    subdomain = "api.exotel.com"
-    account_sid = "yellowsense3"
-    to_number = "02248964153"  # The phone number that you want to call
-    ivr_app_id = "752086"
-
-    # Call the function with the provided parameters
-    return initiate_outgoing_call(api_key, api_token, subdomain, account_sid, to_number, ivr_app_id, from_number)
+        return jsonify({"error": f"Error: {response.status_code}, {response.text}"}), response.status_code
 
 if __name__ == '__main__':
     app.run(debug=True)
