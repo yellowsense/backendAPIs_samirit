@@ -35,7 +35,7 @@ def add_headers(response):
     return response
 
 @app.route('/society_names', methods=['GET'])
-@cross_origin(origin='*')
+@cross_origin(origin='https://yellowsense.in')
 def get_society_names():
     try:
         # Execute a SQL query to retrieve society names and IDs
