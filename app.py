@@ -252,21 +252,22 @@ def confirm_nanny_booking():
         child_number = booking_details.get('ChildNumber')
         user_address = booking_details.get('UserAddress')
 
-        # Save in the database
-        cursor.execute("""
-            INSERT INTO ServiceBookings
-            (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
-            special_requirements, child_number, user_address)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
-              special_requirements, child_number, user_address))
-        conn.commit()
+        # Save in the database only for POST requests
+        if request.method == 'POST':
+            cursor.execute("""
+                INSERT INTO ServiceBookings
+                (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
+                special_requirements, child_number, user_address)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
+                  special_requirements, child_number, user_address))
+            conn.commit()
 
-        # Send confirmation email to the customer
-        send_confirmation_email(
-            user_email, provider_name, service_type, user_name,
-            apartment, StartDate, start_time, special_requirements, child_number, user_address
-        )
+            # Send confirmation email to the customer only for POST requests
+            send_confirmation_email(
+                user_email, provider_name, service_type, user_name,
+                apartment, StartDate, start_time, special_requirements, child_number, user_address
+            )
 
         if request.method == 'GET':
             # Call the dynamic greeting function directly
@@ -326,21 +327,22 @@ def confirm_maid_booking():
         complete_address = booking_details.get('CompleteAddress')
         user_phone_number = booking_details.get('UserPhoneNumber')
 
-        # Save in the database
-        cursor.execute("""
-            INSERT INTO ServiceBookings
-            (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
-            special_requirements, house_size, complete_address, user_phone_number)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
-              special_requirements, house_size, complete_address, user_phone_number))
-        conn.commit()
+        # Save in the database only for POST requests
+        if request.method == 'POST':
+            cursor.execute("""
+                INSERT INTO ServiceBookings
+                (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
+                special_requirements, house_size, complete_address, user_phone_number)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
+                  special_requirements, house_size, complete_address, user_phone_number))
+            conn.commit()
 
-        # Send confirmation email to the customer
-        send_maid_confirmation_email(
-            user_email, provider_name, service_type, user_name,
-            apartment, StartDate, start_time, special_requirements, house_size, complete_address, user_phone_number
-        )
+            # Send confirmation email to the customer only for POST requests
+            send_maid_confirmation_email(
+                user_email, provider_name, service_type, user_name,
+                apartment, StartDate, start_time, special_requirements, house_size, complete_address, user_phone_number
+            )
 
         if request.method == 'GET':
             # Call the dynamic greeting function directly
@@ -403,21 +405,22 @@ def confirm_cook_booking():
         user_address = booking_details.get('UserAddress')
         user_phone_number = booking_details.get('UserPhoneNumber')
 
-        # Save in the database
-        cursor.execute("""
-            INSERT INTO ServiceBookings
-            (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
-            special_requirements, food_preferences, user_address, user_phone_number)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
-              special_requirements, food_preferences, user_address, user_phone_number))
-        conn.commit()
+        # Save in the database only for POST requests
+        if request.method == 'POST':
+            cursor.execute("""
+                INSERT INTO ServiceBookings
+                (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
+                special_requirements, food_preferences, user_address, user_phone_number)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
+                  special_requirements, food_preferences, user_address, user_phone_number))
+            conn.commit()
 
-        # Send confirmation email to the customer
-        send_cook_confirmation_email(
-            user_email, provider_name, service_type, user_name,
-            apartment, StartDate, start_time, special_requirements, food_preferences, user_address, user_phone_number
-        )
+            # Send confirmation email to the customer only for POST requests
+            send_cook_confirmation_email(
+                user_email, provider_name, service_type, user_name,
+                apartment, StartDate, start_time, special_requirements, food_preferences, user_address, user_phone_number
+            )
 
         if request.method == 'GET':
             # Call the dynamic greeting function directly
