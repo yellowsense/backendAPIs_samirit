@@ -238,63 +238,45 @@ def dynamic_greeting(provider_name, user_name, apartment, start_date, start_time
 @cross_origin()
 def confirm_nanny_booking():
     try:
-        if request.method == 'POST':
-            # Extract relevant details from the booking data in the request body
-            booking_details = request.json
-            provider_name = booking_details.get('ProviderName')
-            service_type = booking_details.get('ServiceType')
-            user_name = booking_details.get('UserName')
-            apartment = booking_details.get('Apartment')
-            StartDate = booking_details.get('StartDate')
-            start_time = booking_details.get('StartTime')
-            user_email = booking_details.get('UserEmail')
-            special_requirements = booking_details.get('SpecialRequirements')
-            child_number = booking_details.get('ChildNumber')
-            user_address = booking_details.get('UserAddress')
+        booking_details = request.json  # Assuming the data is sent as JSON in the request body
 
-            # Save in the database
-            cursor.execute("""
-                INSERT INTO ServiceBookings
-                (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
-                special_requirements, child_number, user_address)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
-                  special_requirements, child_number, user_address))
-            conn.commit()
+        # Extract relevant details from the booking data
+        provider_name = booking_details.get('ProviderName')
+        service_type = booking_details.get('ServiceType')
+        user_name = booking_details.get('UserName')
+        apartment = booking_details.get('Apartment')
+        StartDate = booking_details.get('StartDate')
+        start_time = booking_details.get('StartTime')
+        user_email = booking_details.get('UserEmail')
+        special_requirements = booking_details.get('SpecialRequirements')
+        child_number = booking_details.get('ChildNumber')
+        user_address = booking_details.get('UserAddress')
 
-            # Send confirmation email to the customer
-            send_confirmation_email(
-                user_email, provider_name, service_type, user_name,
-                apartment, StartDate, start_time, special_requirements, child_number, user_address
-            )
+        # Save in the database
+        cursor.execute("""
+            INSERT INTO ServiceBookings
+            (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
+            special_requirements, child_number, user_address)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
+              special_requirements, child_number, user_address))
+        conn.commit()
 
-            return jsonify({'message': 'Booking confirmed, email sent'})
+        # Send confirmation email to the customer
+        send_confirmation_email(
+            user_email, provider_name, service_type, user_name,
+            apartment, StartDate, start_time, special_requirements, child_number, user_address
+        )
 
-        elif request.method == 'GET':
-            try:
-                # Extract relevant details from the booking data in the request body for GET request
-                booking_details = request.json
-                provider_name = booking_details.get('ProviderName')
-                user_name = booking_details.get('UserName')
-                apartment = booking_details.get('Apartment')
-                StartDate = booking_details.get('StartDate')
-                start_time = booking_details.get('StartTime')
-                service_type = booking_details.get('ServiceType')
+        if request.method == 'GET':
+            # Call the dynamic greeting function directly
+            dynamic_greeting_response = dynamic_greeting(provider_name, user_name, apartment, StartDate, start_time, service_type)
 
-                # Call the dynamic greeting function directly
-                dynamic_greeting_response = dynamic_greeting(
-                    provider_name, user_name, apartment, StartDate, start_time, service_type
-                )
-
-                # Return the dynamic greeting response in plain text for GET requests
-                return Response(dynamic_greeting_response, content_type='text/plain; charset=utf-8')
-
-            except Exception as e:
-                return jsonify({'error': str(e)}), 400
-
+            # Return the dynamic greeting response in plain text for GET requests
+            return Response(dynamic_greeting_response, content_type='text/plain; charset=utf-8')
         else:
             # Return a message for other request methods
-            return jsonify({'message': 'Invalid request method'})
+            return jsonify({'message': 'Booking confirmed, email sent'})
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -329,64 +311,48 @@ def send_confirmation_email(
 @cross_origin()
 def confirm_maid_booking():
     try:
-        if request.method == 'POST':
-            # Extract relevant details from the booking data in the request body
-            booking_details = request.json
-            provider_name = booking_details.get('ProviderName')
-            service_type = booking_details.get('ServiceType')
-            user_name = booking_details.get('UserName')
-            apartment = booking_details.get('Apartment')
-            StartDate = booking_details.get('StartDate')
-            start_time = booking_details.get('StartTime')
-            user_email = booking_details.get('UserEmail')
-            special_requirements = booking_details.get('SpecialRequirements')
-            house_size = booking_details.get('HouseSize')
-            complete_address = booking_details.get('CompleteAddress')
-            user_phone_number = booking_details.get('UserPhoneNumber')
+        booking_details = request.json  # Assuming the data is sent as JSON in the request body
 
-            # Save in the database
-            cursor.execute("""
-                INSERT INTO ServiceBookings
-                (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
-                special_requirements, house_size, complete_address, user_phone_number)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
-                  special_requirements, house_size, complete_address, user_phone_number))
-            conn.commit()
+        # Extract relevant details from the booking data
+        provider_name = booking_details.get('ProviderName')
+        service_type = booking_details.get('ServiceType')
+        user_name = booking_details.get('UserName')
+        apartment = booking_details.get('Apartment')
+        StartDate = booking_details.get('StartDate')
+        start_time = booking_details.get('StartTime')
+        user_email = booking_details.get('UserEmail')
+        special_requirements = booking_details.get('SpecialRequirements')
+        house_size = booking_details.get('HouseSize')
+        complete_address = booking_details.get('CompleteAddress')
+        user_phone_number = booking_details.get('UserPhoneNumber')
 
-            # Send confirmation email to the customer
-            send_maid_confirmation_email(
-                user_email, provider_name, service_type, user_name,
-                apartment, StartDate, start_time, special_requirements, house_size, complete_address, user_phone_number
+        # Save in the database
+        cursor.execute("""
+            INSERT INTO ServiceBookings
+            (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
+            special_requirements, house_size, complete_address, user_phone_number)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
+              special_requirements, house_size, complete_address, user_phone_number))
+        conn.commit()
+
+        # Send confirmation email to the customer
+        send_maid_confirmation_email(
+            user_email, provider_name, service_type, user_name,
+            apartment, StartDate, start_time, special_requirements, house_size, complete_address, user_phone_number
+        )
+
+        if request.method == 'GET':
+            # Call the dynamic greeting function directly
+            dynamic_greeting_response = dynamic_greeting(
+                provider_name, user_name, apartment, StartDate, start_time, service_type
             )
 
-            return jsonify({'message': 'Maid service booking confirmed, email sent'})
-
-        elif request.method == 'GET':
-            try:
-                # Extract relevant details from the booking data in the request body for GET request
-                booking_details = request.json
-                provider_name = booking_details.get('ProviderName')
-                user_name = booking_details.get('UserName')
-                apartment = booking_details.get('Apartment')
-                StartDate = booking_details.get('StartDate')
-                start_time = booking_details.get('StartTime')
-                service_type = booking_details.get('ServiceType')
-
-                # Call the dynamic greeting function directly
-                dynamic_greeting_response = dynamic_greeting(
-                    provider_name, user_name, apartment, StartDate, start_time, service_type
-                )
-
-                # Return the dynamic greeting response in plain text for GET requests
-                return Response(dynamic_greeting_response, content_type='text/plain; charset=utf-8')
-
-            except Exception as e:
-                return jsonify({'error': str(e)}), 400
-
+            # Return the dynamic greeting response in plain text for GET requests
+            return Response(dynamic_greeting_response, content_type='text/plain; charset=utf-8')
         else:
             # Return a message for other request methods
-            return jsonify({'message': 'Invalid request method'})
+            return jsonify({'message': 'Maid service booking confirmed, email sent'})
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -422,68 +388,52 @@ def send_maid_confirmation_email(
 @cross_origin()
 def confirm_cook_booking():
     try:
-        if request.method == 'POST':
-            # Extract relevant details from the booking data in the request body
-            booking_details = request.json
-            provider_name = booking_details.get('ProviderName')
-            service_type = booking_details.get('ServiceType')
-            user_name = booking_details.get('UserName')
-            apartment = booking_details.get('Apartment')
-            StartDate = booking_details.get('StartDate')
-            start_time = booking_details.get('StartTime')
-            user_email = booking_details.get('UserEmail')
-            special_requirements = booking_details.get('SpecialRequirements')
-            food_preferences = booking_details.get('FoodPreferences')
-            user_address = booking_details.get('UserAddress')
-            user_phone_number = booking_details.get('UserPhoneNumber')
+        booking_details = request.json  # Assuming the data is sent as JSON in the request body
 
-            # Save in the database
-            cursor.execute("""
-                INSERT INTO ServiceBookings
-                (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
-                special_requirements, food_preferences, user_address, user_phone_number)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
-                  special_requirements, food_preferences, user_address, user_phone_number))
-            conn.commit()
+        # Extract relevant details from the booking data
+        provider_name = booking_details.get('ProviderName')
+        service_type = booking_details.get('ServiceType')
+        user_name = booking_details.get('UserName')
+        apartment = booking_details.get('Apartment')
+        StartDate = booking_details.get('StartDate')
+        start_time = booking_details.get('StartTime')
+        user_email = booking_details.get('UserEmail')
+        special_requirements = booking_details.get('SpecialRequirements')
+        food_preferences = booking_details.get('FoodPreferences')
+        user_address = booking_details.get('UserAddress')
+        user_phone_number = booking_details.get('UserPhoneNumber')
 
-            # Send confirmation email to the customer
-            send_cook_confirmation_email(
-                user_email, provider_name, service_type, user_name,
-                apartment, StartDate, start_time, special_requirements, food_preferences, user_address, user_phone_number
+        # Save in the database
+        cursor.execute("""
+            INSERT INTO ServiceBookings
+            (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
+            special_requirements, food_preferences, user_address, user_phone_number)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
+              special_requirements, food_preferences, user_address, user_phone_number))
+        conn.commit()
+
+        # Send confirmation email to the customer
+        send_cook_confirmation_email(
+            user_email, provider_name, service_type, user_name,
+            apartment, StartDate, start_time, special_requirements, food_preferences, user_address, user_phone_number
+        )
+
+        if request.method == 'GET':
+            # Call the dynamic greeting function directly
+            dynamic_greeting_response = dynamic_greeting(
+                provider_name, user_name, apartment, StartDate, start_time, service_type
             )
 
-            return jsonify({'message': 'Cook service booking confirmed, email sent'})
-
-        elif request.method == 'GET':
-            try:
-                # Extract relevant details from the booking data in the request body for GET request
-                booking_details = request.json
-                provider_name = booking_details.get('ProviderName')
-                user_name = booking_details.get('UserName')
-                apartment = booking_details.get('Apartment')
-                StartDate = booking_details.get('StartDate')
-                start_time = booking_details.get('StartTime')
-                service_type = booking_details.get('ServiceType')
-
-                # Call the dynamic greeting function directly
-                dynamic_greeting_response = dynamic_greeting(
-                    provider_name, user_name, apartment, StartDate, start_time, service_type
-                )
-
-                # Return the dynamic greeting response in plain text for GET requests
-                return Response(dynamic_greeting_response, content_type='text/plain; charset=utf-8')
-
-            except Exception as e:
-                return jsonify({'error': str(e)}), 400
-
+            # Return the dynamic greeting response in plain text for GET requests
+            return Response(dynamic_greeting_response, content_type='text/plain; charset=utf-8')
         else:
             # Return a message for other request methods
-            return jsonify({'message': 'Invalid request method'})
+            return jsonify({'message': 'Cook service booking confirmed, email sent'})
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-        
+
 def send_cook_confirmation_email(
     recipient, provider_name, service_type, user_name,
     apartment,StartDate, start_time, special_requirements, food_preferences, user_address, user_phone_number
@@ -511,6 +461,7 @@ def send_cook_confirmation_email(
     recipients = [recipient, 'orders@yellowsense.in']
     msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
+
 
 @app.route('/signin', methods=['POST'])
 @cross_origin()
