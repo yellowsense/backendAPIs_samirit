@@ -35,7 +35,7 @@ def add_headers(response):
     return response
 
 @app.route('/society_names', methods=['GET'])
-@cross_origin(origin='https://www.yellowsense.in')
+@cross_origin(origin='https://yellowsense.in')
 def get_society_names():
     try:
         # Execute a SQL query to retrieve society names and IDs
@@ -1852,9 +1852,6 @@ def make_call():
     else:
         return jsonify({"error": f"Error: {response.status_code}, {response.text}"}), response.status_code
 
-<<<<<<< HEAD
-
-=======
 import firebase_admin
 from firebase_admin import credentials, firestore, messaging
 
@@ -1915,7 +1912,7 @@ def send_fcm_notification_customer(fcm_token, message):
         print(f"Error sending FCM notification: {e}")
         return {'error': f'Error sending FCM notification: {e}'}
 
-@app.route('/send_notification_to_serviceprovider', methods=['GET'])
+@app.route('/send_notification_to_serviceprovider', methods=['POST'])
 def send_notification_to_serviceprovider():
     try:
         data = request.json
@@ -1965,7 +1962,6 @@ def send_fcm_notification_service(fcm_token, message):
     except Exception as e:
         print(f"Error sending FCM notification: {e}")
         return {'error': f'Error sending FCM notification: {e}'}
->>>>>>> 3d1ef2b (first commit)
 
 
 if __name__ == '__main__':
