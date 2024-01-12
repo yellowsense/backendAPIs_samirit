@@ -3,7 +3,5 @@ flask
 flask-cors==4.0.0
 python-dateutil==2.8.2
 Flask-Mail==0.9.1
-<<<<<<< HEAD
-=======
 firebase-admin==6.3.0
->>>>>>> 3d1ef2b (first commit)
+
