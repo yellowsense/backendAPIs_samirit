@@ -1852,7 +1852,120 @@ def make_call():
     else:
         return jsonify({"error": f"Error: {response.status_code}, {response.text}"}), response.status_code
 
+<<<<<<< HEAD
 
+=======
+import firebase_admin
+from firebase_admin import credentials, firestore, messaging
+
+# Initialize Firebase with the credentials
+cred = credentials.Certificate("yellowsense-a9cfc-firebase-adminsdk-cg4wv-e716e121fd.json")
+firebase_admin.initialize_app(cred)
+
+db = firestore.client()
+
+@app.route('/send_notification_to_customer', methods=['POST'])
+def send_notification_to_customer():
+    try:
+        data = request.json
+        mobile_number = data.get('mobile_number')
+        message = data.get('message')
+
+        print(f"Received request for mobile_number: {mobile_number}")
+
+        # Query Firebase to get the FCM token based on the mobile number
+        customer_tokens_ref = db.collection('customer_tokens')
+        doc_ref = customer_tokens_ref.document(mobile_number)
+        
+        try:
+            user_data = doc_ref.get()
+            if user_data.exists:
+                fcm_token = user_data.get('fcmToken')  # Use the correct field name
+                print(f"Found FCM token for mobile_number {mobile_number}: {fcm_token}")
+
+                # Send notification using FCM
+                response = send_fcm_notification_customer(fcm_token, message)
+                return jsonify(response)
+            else:
+                print(f"Mobile number {mobile_number} not registered or FCM token not found")
+                return jsonify({'error': 'Mobile number not registered or FCM token not found'}), 400
+        except Exception as e:
+            print(f"Error retrieving data: {e}")
+            return jsonify({'error': f'Error retrieving data: {e}'}), 500
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def send_fcm_notification_customer(fcm_token, message):
+    # Construct the message
+    notification = messaging.Notification(
+        title="Your Notification Title",
+        body=message,
+    )
+    
+    # Send the message
+    try:
+        response = messaging.send(messaging.Message(
+            notification=notification,
+            token=fcm_token,
+        ))
+        print(f"Successfully sent message: {response}")
+        return {'success': True, 'message': f'Notification sent with message: {message}'}
+    except Exception as e:
+        print(f"Error sending FCM notification: {e}")
+        return {'error': f'Error sending FCM notification: {e}'}
+
+@app.route('/send_notification_to_serviceprovider', methods=['GET'])
+def send_notification_to_serviceprovider():
+    try:
+        data = request.json
+        mobile_number = data.get('mobile_number')
+        message = data.get('message')
+
+        print(f"Received request for mobile_number: {mobile_number}")
+
+        # Query Firebase to get the FCM token based on the mobile number
+        customer_tokens_ref = db.collection('service_tokens')
+        doc_ref = customer_tokens_ref.document(mobile_number)
+        
+        try:
+            user_data = doc_ref.get()
+            if user_data.exists:
+                fcm_token = user_data.get('fcmToken')  # Use the correct field name
+                print(f"Found FCM token for mobile_number {mobile_number}: {fcm_token}")
+
+                # Send notification using FCM
+                response = send_fcm_notification_service(fcm_token, message)
+                return jsonify(response)
+            else:
+                print(f"Mobile number {mobile_number} not registered or FCM token not found")
+                return jsonify({'error': 'Mobile number not registered or FCM token not found'}), 400
+        except Exception as e:
+            print(f"Error retrieving data: {e}")
+            return jsonify({'error': f'Error retrieving data: {e}'}), 500
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def send_fcm_notification_service(fcm_token, message):
+    # Construct the message
+    notification = messaging.Notification(
+        title="Your Notification Title",
+        body=message,
+    )
+    
+    # Send the message
+    try:
+        response = messaging.send(messaging.Message(
+            notification=notification,
+            token=fcm_token,
+        ))
+        print(f"Successfully sent message: {response}")
+        return {'success': True, 'message': f'Notification sent with message: {message}'}
+    except Exception as e:
+        print(f"Error sending FCM notification: {e}")
+        return {'error': f'Error sending FCM notification: {e}'}
+>>>>>>> 3d1ef2b (first commit)
 
 
 if __name__ == '__main__':
