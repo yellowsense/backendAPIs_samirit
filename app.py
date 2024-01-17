@@ -117,8 +117,8 @@ def get_all_maid_details():
                 "Name": row.Name,
                 "PhoneNumber": row.PhoneNumber,
                 "Gender": row.Gender,
-                "Services": row.Services.split(','),
-                "Locations": row.Locations.split(','),
+                "Services": row.Services.split(',') if row.Services else [],
+                "Locations": row.Locations.split(',') if row.Locations else [],
                 "Timings": row.Timings
             }
             maid_details_list.append(maid_details)
