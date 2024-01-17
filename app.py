@@ -1964,16 +1964,9 @@ def send_fcm_notification_from_customer(fcm_token, booking_details):
         print(f"Error sending FCM notification: {e}")
         return {'error': f'Error sending FCM notification: {e}'}
     
-
-<<<<<<< HEAD
-
-
-@app.route('/send_notification_from_serviceprovider', methods=['POST'])
-def send_notification_from_serviceprovider():
-=======
 @app.route('/send_notification_to_serviceprovider', methods=['POST'])
 def send_notification_to_serviceprovider():
->>>>>>> 63edf54590ec43444a3ce977a6028d97b026417f
+
     try:
         data = request.json
         mobile_number = data.get('mobile_number')
