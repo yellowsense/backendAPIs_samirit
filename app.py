@@ -1852,57 +1852,99 @@ def make_call():
     else:
         return jsonify({"error": f"Error: {response.status_code}, {response.text}"}), response.status_code
 
-<<<<<<< HEAD
-
-=======
 import firebase_admin
 from firebase_admin import credentials, firestore, messaging
 
 # Initialize Firebase with the credentials
-cred = credentials.Certificate("yellowsense-a9cfc-firebase-adminsdk-cg4wv-e716e121fd.json")
+cred = credentials.Certificate("yellowsense-technologies-firebase-adminsdk-h6pon-c0345292e9.json")
 firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
-@app.route('/send_notification_to_customer', methods=['POST'])
-def send_notification_to_customer():
+
+@app.route('/send_notification_from_customer', methods=['POST'])
+def send_notification_from_customer():
     try:
         data = request.json
         mobile_number = data.get('mobile_number')
-        message = data.get('message')
 
         print(f"Received request for mobile_number: {mobile_number}")
 
-        # Query Firebase to get the FCM token based on the mobile number
-        customer_tokens_ref = db.collection('customer_tokens')
-        doc_ref = customer_tokens_ref.document(mobile_number)
-        
-        try:
-            user_data = doc_ref.get()
-            if user_data.exists:
-                fcm_token = user_data.get('fcmToken')  # Use the correct field name
-                print(f"Found FCM token for mobile_number {mobile_number}: {fcm_token}")
+        # Retrieve the FCM token from Firestore
+        fcm_token = get_fcm_token_for_mobile_number(mobile_number)
 
-                # Send notification using FCM
-                response = send_fcm_notification_customer(fcm_token, message)
-                return jsonify(response)
-            else:
-                print(f"Mobile number {mobile_number} not registered or FCM token not found")
-                return jsonify({'error': 'Mobile number not registered or FCM token not found'}), 400
-        except Exception as e:
-            print(f"Error retrieving data: {e}")
-            return jsonify({'error': f'Error retrieving data: {e}'}), 500
+        if fcm_token:
+            print(f"Found FCM token for mobile_number {mobile_number}: {fcm_token}")
+
+            # Retrieve the latest booking details for the service provider from Azure Database
+            latest_booking_data = get_latest_booking_data_from_azure()
+
+            # Send notification using FCM with the latest booking details
+            response = send_fcm_notification_from_customer(fcm_token, latest_booking_data)
+            return jsonify(response)
+        else:
+            print(f"Mobile number {mobile_number} not registered or FCM token not found")
+            return jsonify({'error': 'Mobile number not registered or FCM token not found'}), 400
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def send_fcm_notification_customer(fcm_token, message):
-    # Construct the message
+def get_fcm_token_for_mobile_number(mobile_number):
+    # Retrieve FCM token from Firestore
+    service_tokens_ref = db.collection('service_tokens')
+    doc_ref = service_tokens_ref.document(mobile_number)
+    user_data = doc_ref.get()
+    if user_data.exists:
+        return user_data.get('fcmToken')
+    return None
+
+def get_latest_booking_data_from_azure():
+    try:
+        with pyodbc.connect(connectionString) as conn:
+            cursor = conn.cursor()
+
+            latest_booking_query = "SELECT TOP 1 * FROM ServiceBookings ORDER BY created_at DESC;"
+            cursor.execute(latest_booking_query)
+            latest_booking = cursor.fetchone()
+
+            if latest_booking:
+                # Convert the pyodbc.Row object to a dictionary
+                latest_booking_dict = dict(zip([column[0] for column in latest_booking.cursor_description], latest_booking))
+                print(f"Latest Booking Data from Azure: {latest_booking_dict}")
+                return latest_booking_dict
+            else:
+                return None
+
+    except Exception as e:
+        print(f"Error retrieving data from Azure: {e}")
+        return None
+
+def send_fcm_notification_from_customer(fcm_token, booking_details):
+    # Extract relevant fields from booking details
+    user_name = booking_details.get('user_name', '')
+    complete_address = booking_details.get('complete_address', '')
+    apartment = booking_details.get('apartment', '')
+    region = booking_details.get('Region', '')
+
+    # Determine job location based on availability of fields
+    if complete_address:
+        job_location = complete_address
+    elif apartment:
+        job_location = apartment
+    elif region:
+        job_location = region
+    else:
+        job_location = 'None'
+
+    # Construct the message with specific format
+    notification_title = "Job Request"
+    notification_body = f"{notification_title}\n\n{user_name}\nJob Location: {job_location}"
+
     notification = messaging.Notification(
-        title="Your Notification Title",
-        body=message,
+        title=notification_title,
+        body=notification_body,
     )
-    
+
     # Send the message
     try:
         response = messaging.send(messaging.Message(
@@ -1910,50 +1952,96 @@ def send_fcm_notification_customer(fcm_token, message):
             token=fcm_token,
         ))
         print(f"Successfully sent message: {response}")
-        return {'success': True, 'message': f'Notification sent with message: {message}'}
+        return {
+            'success': True,
+            'message': 'Notification sent successfully',
+            'notification': {
+                'title': notification_title,
+                'body': notification_body
+            }
+        }
     except Exception as e:
         print(f"Error sending FCM notification: {e}")
         return {'error': f'Error sending FCM notification: {e}'}
+    
 
-@app.route('/send_notification_to_serviceprovider', methods=['GET'])
-def send_notification_to_serviceprovider():
+
+
+@app.route('/send_notification_from_serviceprovider', methods=['POST'])
+def send_notification_from_serviceprovider():
     try:
         data = request.json
         mobile_number = data.get('mobile_number')
-        message = data.get('message')
 
         print(f"Received request for mobile_number: {mobile_number}")
 
-        # Query Firebase to get the FCM token based on the mobile number
-        customer_tokens_ref = db.collection('service_tokens')
-        doc_ref = customer_tokens_ref.document(mobile_number)
-        
-        try:
-            user_data = doc_ref.get()
-            if user_data.exists:
-                fcm_token = user_data.get('fcmToken')  # Use the correct field name
-                print(f"Found FCM token for mobile_number {mobile_number}: {fcm_token}")
+        # Retrieve the FCM token from Firestore
+        fcm_token = get_fcm_token_for_mobile_number_service(mobile_number)
 
-                # Send notification using FCM
-                response = send_fcm_notification_service(fcm_token, message)
-                return jsonify(response)
-            else:
-                print(f"Mobile number {mobile_number} not registered or FCM token not found")
-                return jsonify({'error': 'Mobile number not registered or FCM token not found'}), 400
-        except Exception as e:
-            print(f"Error retrieving data: {e}")
-            return jsonify({'error': f'Error retrieving data: {e}'}), 500
+        if fcm_token:
+            print(f"Found FCM token for mobile_number {mobile_number}: {fcm_token}")
+
+            # Retrieve the latest booking details for the service provider from Azure Database
+            latest_booking_data = get_latest_booking_data_from_azure_service()
+
+            # Check if the booking is accepted or rejected
+            is_accepted = latest_booking_data.get('status', '').lower() == 'accepted'
+
+            # Send notification using FCM with the latest booking details
+            response = send_fcm_notification_from_service(fcm_token, is_accepted)
+            return jsonify(response)
+        else:
+            print(f"Mobile number {mobile_number} not registered or FCM token not found")
+            return jsonify({'error': 'Mobile number not registered or FCM token not found'}), 400
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def send_fcm_notification_service(fcm_token, message):
-    # Construct the message
+def get_fcm_token_for_mobile_number_service(mobile_number):
+    # Retrieve FCM token from Firestore
+    customer_tokens_ref = db.collection('customer_tokens')
+    doc_ref = customer_tokens_ref.document(mobile_number)
+    user_data = doc_ref.get()
+    if user_data.exists:
+        return user_data.get('fcmToken')
+    return None
+
+def get_latest_booking_data_from_azure_service():
+    try:
+        with pyodbc.connect(connectionString) as conn:
+            cursor = conn.cursor()
+
+            latest_booking_query = "SELECT TOP 1 * FROM ServiceBookings ORDER BY created_at DESC;"
+            cursor.execute(latest_booking_query)
+            latest_booking = cursor.fetchone()
+
+            if latest_booking:
+                # Convert the pyodbc.Row object to a dictionary
+                latest_booking_dict = dict(zip([column[0] for column in latest_booking.cursor_description], latest_booking))
+                print(f"Latest Booking Data from Azure: {latest_booking_dict}")
+                return latest_booking_dict
+            else:
+                return None
+
+    except Exception as e:
+        print(f"Error retrieving data from Azure: {e}")
+        return None
+
+def send_fcm_notification_from_service(fcm_token, is_accepted):
+
+    # Construct the message with specific format
+    if is_accepted:
+        notification_title = "Booking Confirmed"
+        notification_body = f"Helper has accepted your request. You can check the status by tapping below button."
+    else:
+        notification_title = "Booking Rejected"
+        notification_body = f"Helper has rejected your request. You can check the status by tapping below button."
+
     notification = messaging.Notification(
-        title="Your Notification Title",
-        body=message,
+        title=notification_title,
+        body=notification_body,
     )
-    
+
     # Send the message
     try:
         response = messaging.send(messaging.Message(
@@ -1961,11 +2049,18 @@ def send_fcm_notification_service(fcm_token, message):
             token=fcm_token,
         ))
         print(f"Successfully sent message: {response}")
-        return {'success': True, 'message': f'Notification sent with message: {message}'}
+        return {
+            'success': True,
+            'message': 'Notification sent successfully',
+            'notification': {
+                'title': notification_title,
+                'body': notification_body
+            }
+        }
     except Exception as e:
         print(f"Error sending FCM notification: {e}")
         return {'error': f'Error sending FCM notification: {e}'}
->>>>>>> 3d1ef2b (first commit)
+
 
 
 if __name__ == '__main__':
