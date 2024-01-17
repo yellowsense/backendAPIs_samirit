@@ -2065,10 +2065,6 @@ def send_fcm_notification_from_service(fcm_token, is_accepted):
     except Exception as e:
         print(f"Error sending FCM notification: {e}")
         return {'error': f'Error sending FCM notification: {e}'}
-<<<<<<< HEAD
-
-=======
->>>>>>> 63edf54590ec43444a3ce977a6028d97b026417f
 
 
 if __name__ == '__main__':
