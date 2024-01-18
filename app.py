@@ -495,10 +495,34 @@ def signin():
             "VALUES (?, ?, ?, ?, ?)",
             (username, mobile_number, email, password, role)
         )
+
+        # If the role is "service," check the maidreg table
+        if role == 'Servicer':
+            cursor.execute(
+                "SELECT * FROM maidreg WHERE PhoneNumber=?",
+                (mobile_number,)
+            )
+            existing_maid = cursor.fetchone()
+
+            if existing_maid:
+                # If maid exists, update the values
+                cursor.execute(
+                    "UPDATE maidreg SET Name=? WHERE PhoneNumber=?",
+                    (username, mobile_number)
+                )
+            else:
+                # If maid doesn't exist, insert a new row
+                cursor.execute(
+                    "INSERT INTO maidreg (Name, PhoneNumber) "
+                    "VALUES (?, ?)",
+                    (username, mobile_number)
+                )
+
         conn.commit()
 
         # Return a success message with status code 200
         return jsonify({"message": "User registration successful"}), 200
+
     except Exception as e:
         app.logger.error(str(e))
         # Return an error message with status code 500
