@@ -1885,7 +1885,6 @@ firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
-
 @app.route('/send_notification_from_customer', methods=['POST'])
 def send_notification_from_customer():
     try:
@@ -1962,7 +1961,7 @@ def send_fcm_notification_from_customer(fcm_token, booking_details):
 
     # Construct the message with specific format
     notification_title = "Job Request"
-    notification_body = f"{notification_title}\n\n{user_name}\nJob Location: {job_location}"
+    notification_body = f"{notification_title}\n\n{user_name}\n\nJob Location\n{job_location}"
 
     notification = messaging.Notification(
         title=notification_title,
@@ -1994,8 +1993,9 @@ def send_notification_from_serviceprovider():
     try:
         data = request.json
         mobile_number = data.get('mobile_number')
+        action = data.get('action')  # New field for action (accept or reject)
 
-        print(f"Received request for mobile_number: {mobile_number}")
+        print(f"Received request for mobile_number: {mobile_number} with action: {action}")
 
         # Retrieve the FCM token from Firestore
         fcm_token = get_fcm_token_for_mobile_number_service(mobile_number)
@@ -2003,21 +2003,97 @@ def send_notification_from_serviceprovider():
         if fcm_token:
             print(f"Found FCM token for mobile_number {mobile_number}: {fcm_token}")
 
-            # Retrieve the latest booking details for the service provider from Azure Database
-            latest_booking_data = get_latest_booking_data_from_azure_service()
+            # Check if the status is already 'accept' or 'reject'
+            current_status = get_current_status_in_azure_service(mobile_number)
+            if current_status and current_status.lower() in ['accept', 'reject']:
+                return jsonify({'message': f'Action already performed. Status is {current_status.capitalize()}'}), 200
 
-            # Check if the booking is accepted or rejected
-            is_accepted = latest_booking_data.get('status', '').lower() == 'accepted'
+            # Update the status in Azure based on mobile_number and action
+            update_status_in_azure_service(mobile_number, action)
 
-            # Send notification using FCM with the latest booking details
-            response = send_fcm_notification_from_service(fcm_token, is_accepted)
-            return jsonify(response)
+            # Check if the action is 'accept' or 'reject'
+            is_accepted = action.lower() == 'accept'
+
+            # Send notification using FCM
+            if not current_status or current_status.lower() not in ['accept', 'reject']:
+                notification_title = "Booking Confirmed" if is_accepted else "Booking Rejected"
+                notification_body = f"Helper has {action.lower()}ed your request. You can check the status by tapping below button."
+                response = send_fcm_notification_from_service(fcm_token, notification_title, notification_body)
+                return jsonify(response)
         else:
             print(f"Mobile number {mobile_number} not registered or FCM token not found")
             return jsonify({'error': 'Mobile number not registered or FCM token not found'}), 400
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+def get_current_status_in_azure_service(mobile_number):
+    try:
+        with pyodbc.connect(connectionString) as conn:
+            cursor = conn.cursor()
+
+            # Retrieve the current status based on user_phone_number
+            current_status_query = "SELECT TOP 1 status FROM ServiceBookings WHERE user_phone_number = ? ORDER BY created_at DESC;"
+            cursor.execute(current_status_query, (mobile_number,))
+            result = cursor.fetchone()
+
+            if result:
+                return result[0]
+
+    except Exception as e:
+        print(f"Error retrieving current status from Azure: {e}")
+        return None
+
+def update_status_in_azure_service(mobile_number, action):
+    try:
+        with pyodbc.connect(connectionString) as conn:
+            cursor = conn.cursor()
+
+            # Retrieve the FCM token from Firestore within the function
+            fcm_token = get_fcm_token_for_mobile_number_service(mobile_number)
+
+            # Check if there is a row with the specified mobile_number and status as 'Pending' or 'NULL'
+            check_pending_query = "SELECT TOP 1 user_phone_number, status FROM ServiceBookings WHERE user_phone_number = ? ORDER BY created_at DESC;"
+            cursor.execute(check_pending_query, (mobile_number,))
+            result = cursor.fetchone()
+
+            if result:
+                user_phone_number, current_status = result
+
+                if current_status in ('Pending', None):
+                    # Update the status based on user_phone_number
+                    update_status_query = "UPDATE ServiceBookings SET status = ? WHERE user_phone_number = ? AND (status IS NULL OR status = 'Pending');"
+                    cursor.execute(update_status_query, (action, user_phone_number))
+                    conn.commit()
+
+                    print(f"Updated status in Azure for user_phone_number {user_phone_number}: {action}")
+
+                    # Check if the action is 'accept' or 'reject' to send a notification
+                    send_notification = True
+                    if action.lower() == 'accept':
+                        notification_title = "Booking Confirmed"
+                        notification_body = f"Helper has accepted your request. You can check the status by tapping below button."
+                    elif action.lower() == 'reject':
+                        notification_title = "Booking Rejected"
+                        notification_body = f"Helper has rejected your request. You can check the status by tapping below button."
+                    else:
+                        send_notification = False
+
+                    if send_notification:
+                        # Send notification using FCM
+                        send_fcm_notification_from_service(fcm_token, notification_title, notification_body)
+                else:
+                    print(f"Action not performed for mobile_number {mobile_number}. Status is already '{current_status}'. Sending notification.")
+                    
+                    # Send notification for status already performed
+                    notification_title = "Action Already Performed"
+                    notification_body = f"The action for your request has already been performed. You can check the status by tapping below button."
+                    send_fcm_notification_from_service(fcm_token, notification_title, notification_body)
+            else:
+                print(f"No row found for mobile_number {mobile_number}. Action not performed.")
+
+    except Exception as e:
+        print(f"Error updating status in Azure: {e}")
 
 def get_fcm_token_for_mobile_number_service(mobile_number):
     # Retrieve FCM token from Firestore
@@ -2028,62 +2104,31 @@ def get_fcm_token_for_mobile_number_service(mobile_number):
         return user_data.get('fcmToken')
     return None
 
-def get_latest_booking_data_from_azure_service():
-    try:
-        with pyodbc.connect(connectionString) as conn:
-            cursor = conn.cursor()
-
-            latest_booking_query = "SELECT TOP 1 * FROM ServiceBookings ORDER BY created_at DESC;"
-            cursor.execute(latest_booking_query)
-            latest_booking = cursor.fetchone()
-
-            if latest_booking:
-                # Convert the pyodbc.Row object to a dictionary
-                latest_booking_dict = dict(zip([column[0] for column in latest_booking.cursor_description], latest_booking))
-                print(f"Latest Booking Data from Azure: {latest_booking_dict}")
-                return latest_booking_dict
-            else:
-                return None
-
-    except Exception as e:
-        print(f"Error retrieving data from Azure: {e}")
-        return None
-
-def send_fcm_notification_from_service(fcm_token, is_accepted):
-
+def send_fcm_notification_from_service(fcm_token, title, body):
     # Construct the message with specific format
-    if is_accepted:
-        notification_title = "Booking Confirmed"
-        notification_body = f"Helper has accepted your request. You can check the status by tapping below button."
-    else:
-        notification_title = "Booking Rejected"
-        notification_body = f"Helper has rejected your request. You can check the status by tapping below button."
-
-    notification = messaging.Notification(
-        title=notification_title,
-        body=notification_body,
+    message = messaging.Message(
+        notification=messaging.Notification(
+            title=title,
+            body=body,
+        ),
+        token=fcm_token,
     )
 
     # Send the message
     try:
-        response = messaging.send(messaging.Message(
-            notification=notification,
-            token=fcm_token,
-        ))
+        response = messaging.send(message)
         print(f"Successfully sent message: {response}")
         return {
             'success': True,
             'message': 'Notification sent successfully',
             'notification': {
-                'title': notification_title,
-                'body': notification_body
+                'title': title,
+                'body': body
             }
         }
     except Exception as e:
         print(f"Error sending FCM notification: {e}")
         return {'error': f'Error sending FCM notification: {e}'}
-    
-
 
 if __name__ == '__main__':
     app.run(debug=True)
