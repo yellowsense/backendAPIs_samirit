@@ -7,16 +7,17 @@ from dateutil import parser
 from flask_mail import Mail, Message
 from flask import make_response
 
-app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
-app.config['CORS_HEADERS'] = 'Content-Type'
-
 # Database connection setup
 SERVER = 'maidsqlppserver.database.windows.net'
 DATABASE = 'miadsqlpp'
 USERNAME = 'ysadmin'
 PASSWORD = 'yellowsense@1234'
 connectionString = f'DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={SERVER};DATABASE={DATABASE};UID={USERNAME};PWD={PASSWORD}'
+
+app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "https://yellowsense.in"}})
+# app.config['CORS_HEADERS'] = 'Content-Type'
+
 
 try:
     with pyodbc.connect(connectionString) as conn:
