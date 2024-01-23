@@ -856,52 +856,6 @@ def update_maid_by_mobile():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
-@app.route('/get_customer_details', methods=['GET'])
-@cross_origin()
-def get_customer_details():
-    try:
-        # Extract the mobile number from the request parameters
-        mobile_number = request.args.get('mobile_number')
-
-        # Check if the mobile number is provided
-        if not mobile_number:
-            return jsonify({"error": "Missing mobile_number parameter"}), 400
-
-        # Retrieve customer details based on mobile number from BookingDetails
-        cursor.execute('SELECT * FROM BookingDetails WHERE customer_mobile_number = ?', (mobile_number,))
-        booking_details = cursor.fetchone()
-
-        if not booking_details:
-            return jsonify({"error": "Customer not found in BookingDetails"}), 404
-
-        # Retrieve additional details from AccountDetails using the mobile number
-        cursor.execute('SELECT * FROM AccountDetails WHERE MobileNumber = ?', (mobile_number,))
-        account_details = cursor.fetchone()
-
-        if not account_details:
-            return jsonify({"error": "Customer account details not found"}), 404
-
-        # Combine both sets of details and return the response
-        customer_details = {
-            "booking_details": {
-                "customer_mobile_number": booking_details.customer_mobile_number,
-                "provider_mobile_number":booking_details.provider_mobile_number,
-                "id":booking_details.id,
-                # Add other booking details as needed
-            },
-            "account_details": {
-                "Username": account_details.Username,
-                "MobileNumber": account_details.MobileNumber,
-                "Email": account_details.Email,
-                # Add other account details as needed
-            }
-        }
-
-        return jsonify(customer_details)
-    except Exception as e:
-        app.logger.error(str(e))
-        return jsonify({"error": "Internal Server Error"}), 500
-
 @app.route('/get_customer/<string:mobile_number>', methods=['GET'])
 @cross_origin()
 def customer_details(mobile_number):
@@ -930,53 +884,7 @@ def customer_details(mobile_number):
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-@app.route('/serviceprovider/confirm', methods=['POST'])
-@cross_origin()
-def confirm_booking():
-    data = request.get_json()
 
-    provider_mobile = data.get('provider_mobile')
-    action = data.get('action')
-
-    # Execute raw SQL query to fetch the booking
-    sql_query = f"SELECT TOP 1 * FROM BookingDetails WHERE provider_mobile_number = '{provider_mobile}' AND (status IS NULL OR status = 'pending');" 
-    cursor.execute(sql_query)
-    booking = cursor.fetchone()
-    if booking:
-        if action == 'accept':
-            # Execute raw SQL query to update the booking status
-            update_query = f"UPDATE BookingDetails SET status = 'accepted' WHERE id = {booking.id};"
-            cursor.execute(update_query)
-            provider_details_query = f"SELECT * FROM maidreg WHERE PhoneNumber = '{provider_mobile}';"
-            cursor.execute(provider_details_query)
-            provider_details = cursor.fetchone()
-
-            conn.commit()  # Commit the changes to the database
-
-            if provider_details:
-                    # Return booking confirmation message along with provider details
-                response = {
-                    'message': 'Booking confirmed',
-                    'provider_details': {
-                        'name': provider_details.Name,
-                        'gender': provider_details.Gender,
-                        'phone_number': provider_details.PhoneNumber,
-                        'services': provider_details.Services,
-                        'locations': provider_details.Locations,
-                        'timings': provider_details.Timings
-                        }
-                    }
-                return jsonify(response)
-            else:
-                return jsonify({'message': 'Provider details not found'})
-        elif action == 'reject':
-            # Execute raw SQL query to update the booking status
-            update_query = f"UPDATE BookingDetails SET status = 'rejected' WHERE id = {booking.id};"
-            cursor.execute(update_query)
-            conn.commit()
-            return jsonify({'message': 'Booking rejected'})
-    else:
-        return jsonify({'message': 'Booking not found or already processed'})
 @app.route('/customer-booking-details/<customer_mobile_number>', methods=['GET'])
 @cross_origin()
 def get_customer_booking_details(customer_mobile_number):
@@ -1010,76 +918,6 @@ def get_customer_booking_details(customer_mobile_number):
     except Exception as e:
         print(f"Error: {str(e)}")
         return jsonify({"error": "Internal Server Error"}), 500
-
-
-@app.route('/update_account', methods=['PUT'])
-@cross_origin()
-def update_account():
-    data = request.get_json()
-
-    phone_number = data.get('phone_number')
-    name = data.get('name')
-    age = data.get('age')
-    gender = data.get('gender')
-    services = data.get('services')
-    aadhar_number = data.get('aadhar_number')
-    pan_card = data.get('pan_card')
-
-    # Update the values in the accountdetails table
-    account_query = "UPDATE accountdetails SET"
-    if name is not None:
-        account_query += f" Username='{name}',"
-    if age is not None:
-        account_query += f" Age={age},"
-    if gender is not None:
-        account_query += f" Gender='{gender}',"
-    if services is not None:
-        services = services.replace("'", "''")
-        account_query += f" Services='{services}',"
-    if aadhar_number is not None:
-        account_query += f" AadharCard='{aadhar_number}',"
-    if pan_card is not None:
-        account_query += f" PanCardNumber='{pan_card}',"
-
-    # Remove the trailing comma and complete the query
-    account_query = account_query.rstrip(',') + f" WHERE MobileNumber ='{phone_number}'"
-
-    # Update the values in the maidreg table
-    maid_query = "UPDATE maidreg SET"
-    if name is not None:
-        maid_query += f" Name='{name}',"
-    if age is not None:
-        maid_query += f" age={age},"
-    if gender is not None:
-        maid_query += f" Gender='{gender}',"
-    if services is not None:
-        services = services.replace("'", "''")
-        maid_query += f" Services='{services}',"
-    if aadhar_number is not None:
-        maid_query += f" AadharNumber='{aadhar_number}',"
-    if pan_card is not None:
-        maid_query += f" pancardnumber='{pan_card}',"
-
-    # Remove the trailing comma and complete the query
-    maid_query = maid_query.rstrip(',') + f" WHERE PhoneNumber='{phone_number}'"
-
-    booking_query = "UPDATE BookingDetails SET"
-    if name is not None:
-        booking_query += f" Provider_name='{name}',"
-    if services is not None:
-        # Handle Services as a string, properly escaping single quotes
-        services = services.replace("'", "''")
-        booking_query += f" Services='{services}',"
-            # Remove the trailing comma and complete the query
-    booking_query = booking_query.rstrip(',') + f" WHERE provider_mobile_number='{phone_number}'"
-    
-    try:
-        cursor.execute(account_query)
-        cursor.execute(maid_query)
-        conn.commit()
-        return jsonify({'message': 'Profile data is  updated successfully'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 def convert_date_format(date_str):
     try:
@@ -1501,6 +1339,7 @@ def get_requests_details():
 
     return jsonify(response)
 
+
 @app.route('/profile_details', methods=['POST'])
 @cross_origin()
 def profile_details():
@@ -1887,6 +1726,7 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 @app.route('/send_notification_from_customer', methods=['POST'])
+@cross_origin()
 def send_notification_from_customer():
     try:
         data = request.json
@@ -1990,6 +1830,7 @@ def send_fcm_notification_from_customer(fcm_token, booking_details):
     
 
 @app.route('/send_notification_from_serviceprovider', methods=['POST'])
+@cross_origin()
 def send_notification_from_serviceprovider():
     try:
         data = request.json
