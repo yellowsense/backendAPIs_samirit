@@ -1058,8 +1058,13 @@ def booking():
             # Get the name of the service provider
             provider_name = provider.Name
 
+            start_time = data.get('start_time')
+            start_date = data.get('start_date')  # Assuming you still need this field
+            service = data.get('service_type')  # Assuming you still need this field
+            apartment = data.get('apartment')
+
             # Insert into ServiceBookings and retrieve the last inserted ID
-            cursor.execute('INSERT INTO ServiceBookings (user_phone_number, provider_phone_number, customer_status, user_name, provider_name) OUTPUT INSERTED.id VALUES (?, ?, ?, ?, ?)', (customer_mobile_number, provider_mobile_number, status, customer_username, provider_name))
+            cursor.execute('INSERT INTO ServiceBookings (user_phone_number, provider_phone_number, customer_status, user_name, provider_name, start_time, StartDate, service_type, apartment) OUTPUT INSERTED.id VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', (customer_mobile_number, provider_mobile_number, status, customer_username, provider_name, start_time, start_date, service, apartment))
             last_inserted_id = cursor.fetchone().id
             conn.commit()
 
@@ -1069,6 +1074,10 @@ def booking():
                     sb.user_name,
                     sb.provider_name,
                     sb.provider_phone_number,
+                    sb.start_time,
+                    sb.StartDate,
+                    sb.service_type,
+                    sb.apartment,
                     sp.Services AS service_provider_services,
                     sp.Locations AS service_provider_locations,
                     ad.MobileNumber AS user_phone_number,
@@ -1097,6 +1106,10 @@ def booking():
                         "user_name": row.user_name,
                         "user_phone_number": row.user_phone_number,
                     },
+                    "start_time": row.start_time,
+                    "start_date": row.StartDate,
+                    "service_type": row.service_type,
+                    "apartment": row.apartment,
                     "customer_status": row.customer_status
                 }
 
