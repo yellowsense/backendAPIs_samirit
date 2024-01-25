@@ -15,7 +15,7 @@ PASSWORD = 'yellowsense@1234'
 connectionString = f'DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={SERVER};DATABASE={DATABASE};UID={USERNAME};PWD={PASSWORD}'
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://yellowsense.in"}})
+CORS(app, resources={r"/*": {"origins": "*"}})
 # app.config['CORS_HEADERS'] = 'Content-Type'
 
 
@@ -30,8 +30,8 @@ except pyodbc.Error as e:
 # Function to add custom headers to every response
 @app.after_request
 def add_headers(response):
-    response.headers['Access-Control-Allow-Origin'] = 'https://yellowsense.in'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE'
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     return response
 
@@ -47,7 +47,12 @@ def get_society_names():
         society_data = [{"id": row.society_id, "name": row.society_name} for row in rows]
 
         response=jsonify(society_data)  # Return JSON with id and name
-        response.headers["Access-Control-Allow-Origin"]="https://yellowsense.in"
+        
+        # Set CORS headers
+        response.headers["Access-Control-Allow-Origin"]="*"       
+        response.headers["Access-Control-Allow-Methods"]= "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"]= "Content-Type, Authorization"
+        response.headers["Access-Control-Allow-Credentials"]= "true"
         return response
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
