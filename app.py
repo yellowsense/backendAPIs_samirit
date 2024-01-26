@@ -23,19 +23,19 @@ except pyodbc.Error as e:
 
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://yellowsense.in"}})
+CORS(app, resources={r"/*": {"origins": "https://yellowsense.in/"}})
 # app.config['CORS_HEADERS'] = 'Content-Type'
 
 # Function to add custom headers to every response
-@app.after_request
-def add_headers(response):
-    response.headers['Access-Control-Allow-Origin'] = 'https://yellowsense.in'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, HEAD'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-    return response
+#@app.after_request
+#def add_headers(response):
+#    response.headers['Access-Control-Allow-Origin'] = 'https://yellowsense.in'
+#    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, HEAD'
+#    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+#    return response
 
 @app.route('/society_names', methods=['OPTIONS', 'GET', 'POST', 'HEAD'])
-@cross_origin(origin='https://yellowsense.in')
+@cross_origin(origin='https://yellowsense.in/')
 def get_society_names():
     try:
         # Execute a SQL query to retrieve society names and IDs
@@ -48,10 +48,9 @@ def get_society_names():
         response=jsonify(society_data)  # Return JSON with id and name
         
         # Set CORS headers
-        response.headers["Access-Control-Allow-Origin"]="https://yellowsense.in"       
+        response.headers["Access-Control-Allow-Origin"]="https://yellowsense.in/"
         response.headers["Access-Control-Allow-Methods"]= "GET, POST, OPTIONS, HEAD"
-        response.headers["Access-Control-Allow-Headers"]= "Content-Type, Authorization"
-        # response.headers["Access-Control-Allow-Credentials"]= "true"
+        response.headers["Access-Control-Allow-Headers"]= "Content-Type"
         return response
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
