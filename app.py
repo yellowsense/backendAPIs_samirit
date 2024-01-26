@@ -31,7 +31,7 @@ except pyodbc.Error as e:
 
 # Function to add custom headers to every response
 @app.after_request
-def add_headers(response):
+def add_headers(response): 
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
     return response
