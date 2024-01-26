@@ -7,6 +7,11 @@ from dateutil import parser
 from flask_mail import Mail, Message
 from flask import make_response
 
+app = Flask(__name__)
+CORS(app) 
+#, resources={r"/*": {"origins": "https://yellowsense.in/"}})
+# app.config['CORS_HEADERS'] = 'Content-Type'
+
 # Database connection setup
 SERVER = 'maidsqlppserver.database.windows.net'
 DATABASE = 'miadsqlpp'
@@ -22,20 +27,17 @@ except pyodbc.Error as e:
     raise
 
 
-app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://yellowsense.in/"}})
-# app.config['CORS_HEADERS'] = 'Content-Type'
+
 
 # Function to add custom headers to every response
-#@app.after_request
-#def add_headers(response):
-#    response.headers['Access-Control-Allow-Origin'] = 'https://yellowsense.in'
-#    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, HEAD'
-#    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-#    return response
+@app.after_request
+def add_headers(response):
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return response
 
 @app.route('/society_names', methods=['OPTIONS', 'GET', 'POST', 'HEAD'])
-@cross_origin(origin='https://yellowsense.in/')
+@cross_origin()
 def get_society_names():
     try:
         # Execute a SQL query to retrieve society names and IDs
@@ -48,7 +50,7 @@ def get_society_names():
         response=jsonify(society_data)  # Return JSON with id and name
         
         # Set CORS headers
-        response.headers["Access-Control-Allow-Origin"]="https://yellowsense.in/"
+        # response.headers["Access-Control-Allow-Origin"]="https://yellowsense.in/"
         response.headers["Access-Control-Allow-Methods"]= "GET, POST, OPTIONS, HEAD"
         response.headers["Access-Control-Allow-Headers"]= "Content-Type"
         return response
