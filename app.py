@@ -1740,7 +1740,6 @@ from firebase_admin import credentials, firestore, messaging
 # Initialize Firebase with the credentials
 cred = credentials.Certificate("yellowsense-technologies-firebase-adminsdk-h6pon-c0345292e9.json")
 firebase_admin.initialize_app(cred)
-
 db = firestore.client()
 
 @app.route('/send_notification_from_customer', methods=['POST'])
