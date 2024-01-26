@@ -13,12 +13,6 @@ DATABASE = 'miadsqlpp'
 USERNAME = 'ysadmin'
 PASSWORD = 'yellowsense@1234'
 connectionString = f'DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={SERVER};DATABASE={DATABASE};UID={USERNAME};PWD={PASSWORD}'
-
-app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
-# app.config['CORS_HEADERS'] = 'Content-Type'
-
-
 try:
     with pyodbc.connect(connectionString) as conn:
         app.logger.info("Connected to the database.")
@@ -27,16 +21,21 @@ except pyodbc.Error as e:
     app.logger.error("Error connecting to the database: %s", e)
     raise
 
+
+app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
+# app.config['CORS_HEADERS'] = 'Content-Type'
+
 # Function to add custom headers to every response
 @app.after_request
 def add_headers(response):
     response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, HEAD'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     return response
 
-@app.route('/society_names', methods=['GET'])
-@cross_origin(origin='https://yellowsense.in')
+# @cross_origin(origin='*')
+@app.route('/society_names', methods=['OPTIONS', 'GET', 'POST', 'HEAD'])
 def get_society_names():
     try:
         # Execute a SQL query to retrieve society names and IDs
@@ -50,7 +49,7 @@ def get_society_names():
         
         # Set CORS headers
         response.headers["Access-Control-Allow-Origin"]="*"       
-        response.headers["Access-Control-Allow-Methods"]= "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Methods"]= "GET, POST, OPTIONS, HEAD"
         response.headers["Access-Control-Allow-Headers"]= "Content-Type, Authorization"
         response.headers["Access-Control-Allow-Credentials"]= "true"
         return response
@@ -292,7 +291,7 @@ def send_confirmation_email(
     recipient, provider_name, service_type, user_name,
     apartment, StartDate, start_time, special_requirements, child_number, user_address
 ):
-    subject = 'Booking Confirmation'
+    subject = 'Booking Confirmation from YellowSense!'
     
     # Format the booking details for the email body
     body = f'Dear {user_name},\n\nYour booking with {provider_name} for {service_type} has been confirmed.\n\nBooking Details:\n\n'
@@ -369,7 +368,7 @@ def send_maid_confirmation_email(
     recipient, provider_name, service_type, user_name,
     apartment,StartDate, start_time, special_requirements, house_size, complete_address, user_phone_number
 ):
-    subject = 'Maid Service Booking Confirmation'
+    subject = 'Maid Service Booking Confirmation from YellowSense.'
     
     # Format the booking details for the email body
     body = f'Dear {user_name},\n\nYour maid service booking with {provider_name} has been confirmed.\n\nBooking Details:\n\n'
@@ -447,7 +446,7 @@ def send_cook_confirmation_email(
     recipient, provider_name, service_type, user_name,
     apartment,StartDate, start_time, special_requirements, food_preferences, user_address, user_phone_number
 ):
-    subject = 'Cook Service Booking Confirmation'
+    subject = 'Cook Service Booking Confirmation from YellowSense!'
     
     # Format the booking details for the email body
     body = f'Dear {user_name},\n\nYour cook service booking with {provider_name} has been confirmed.\n\nBooking Details:\n\n'
