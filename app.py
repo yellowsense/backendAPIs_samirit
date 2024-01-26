@@ -1651,7 +1651,7 @@ def get_matching_providers():
     if matching_providers:
         return jsonify({"providers": matching_providers})
     else:
-        return jsonify({"providers": "No matching service providers found"})
+        return jsonify({"error": "No matching service providers found"})
 
 @app.route('/get_maid_by_phone', methods=['GET'])
 @cross_origin()
