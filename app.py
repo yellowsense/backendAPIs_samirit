@@ -2,7 +2,7 @@ import flask
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS, cross_origin
 import pyodbc
-from datetime import time, timedelta, datetime
+from datetime import time, timedelta, datetime, date
 from dateutil import parser
 from flask_mail import Mail, Message
 from flask import make_response
@@ -1742,9 +1742,7 @@ cred = credentials.Certificate("yellowsense-technologies-firebase-adminsdk-h6pon
 firebase_admin.initialize_app(cred)
 
 db = firestore.client()
-
 @app.route('/send_notification_from_customer', methods=['POST'])
-@cross_origin()
 def send_notification_from_customer():
     try:
         data = request.json
@@ -1759,7 +1757,7 @@ def send_notification_from_customer():
             print(f"Found FCM token for mobile_number {mobile_number}: {fcm_token}")
 
             # Retrieve the latest booking details for the service provider from Azure Database
-            latest_booking_data = get_latest_booking_data_from_azure()
+            latest_booking_data = get_latest_booking_data_from_azure(mobile_number)
 
             # Send notification using FCM with the latest booking details
             response = send_fcm_notification_from_customer(fcm_token, latest_booking_data)
@@ -1780,13 +1778,17 @@ def get_fcm_token_for_mobile_number(mobile_number):
         return user_data.get('fcmToken')
     return None
 
-def get_latest_booking_data_from_azure():
+def get_latest_booking_data_from_azure(mobile_number):
     try:
         with pyodbc.connect(connectionString) as conn:
             cursor = conn.cursor()
 
-            latest_booking_query = "SELECT TOP 1 * FROM ServiceBookings ORDER BY created_at DESC;"
-            cursor.execute(latest_booking_query)
+            latest_booking_query = (
+                "SELECT TOP 1 * FROM ServiceBookings "
+                "WHERE provider_phone_number = ? "
+                "ORDER BY created_at DESC;"
+            )
+            cursor.execute(latest_booking_query, mobile_number)
             latest_booking = cursor.fetchone()
 
             if latest_booking:
@@ -1801,26 +1803,35 @@ def get_latest_booking_data_from_azure():
         print(f"Error retrieving data from Azure: {e}")
         return None
 
+
+def format_date(start_date):
+    if isinstance(start_date, str):
+        # Parse the date string and format it as '27 Jan 2024'
+        parsed_date = datetime.strptime(start_date, "%a, %d %b %Y %H:%M:%S %Z")
+    elif isinstance(start_date, date):
+        # If start_date is already a datetime.date object
+        parsed_date = datetime.combine(start_date, datetime.min.time())
+    else:
+        raise ValueError("Invalid start_date format")
+
+    return parsed_date.strftime("%d %b %Y")
 def send_fcm_notification_from_customer(fcm_token, booking_details):
     # Extract relevant fields from booking details
     user_name = booking_details.get('user_name', '')
-    complete_address = booking_details.get('complete_address', '')
+    service_type = booking_details.get('service_type', '')
     apartment = booking_details.get('apartment', '')
-    region = booking_details.get('Region', '')
+    start_date = booking_details.get('StartDate', '')
+    start_time = booking_details.get('start_time', '')
 
-    # Determine job location based on availability of fields
-    if complete_address:
-        job_location = complete_address
-    elif apartment:
-        job_location = apartment
-    elif region:
-        job_location = region
-    else:
-        job_location = 'None'
+    # Format the start_date
+    formatted_start_date = format_date(start_date)
 
     # Construct the message with specific format
     notification_title = "Job Request"
-    notification_body = f"{notification_title}\n\n{user_name}\n\nJob Location\n{job_location}"
+    notification_body = (
+        f"{notification_title}\n\nName: {user_name}\nService Type: {service_type}\n"
+        f"Apartment: {apartment}\nStart Date: {formatted_start_date}\nStart Time: {start_time}"
+    )
 
     notification = messaging.Notification(
         title=notification_title,
@@ -1839,13 +1850,16 @@ def send_fcm_notification_from_customer(fcm_token, booking_details):
             'message': 'Notification sent successfully',
             'notification': {
                 'title': notification_title,
-                'body': notification_body
+                'name': user_name,
+                'service_type': service_type,
+                'apartment': apartment,
+                'start_date': formatted_start_date,
+                'start_time': start_time,   
             }
         }
     except Exception as e:
         print(f"Error sending FCM notification: {e}")
-        return {'error': f'Error sending FCM notification: {e}'}
-    
+        return {'error': f'Error sending FCM notification: {e}'} 
 
 @app.route('/send_notification_from_serviceprovider', methods=['POST'])
 @cross_origin()
