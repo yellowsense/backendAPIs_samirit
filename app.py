@@ -1742,7 +1742,9 @@ cred = credentials.Certificate("yellowsense-technologies-firebase-adminsdk-h6pon
 firebase_admin.initialize_app(cred)
 
 db = firestore.client()
+
 @app.route('/send_notification_from_customer', methods=['POST'])
+@cross_origin()
 def send_notification_from_customer():
     try:
         data = request.json
@@ -1815,6 +1817,8 @@ def format_date(start_date):
         raise ValueError("Invalid start_date format")
 
     return parsed_date.strftime("%d %b %Y")
+
+    
 def send_fcm_notification_from_customer(fcm_token, booking_details):
     # Extract relevant fields from booking details
     user_name = booking_details.get('user_name', '')
@@ -1829,19 +1833,17 @@ def send_fcm_notification_from_customer(fcm_token, booking_details):
     # Construct the message with specific format
     notification_title = "Job Request"
     notification_body = (
-        f"{notification_title}\n\nName: {user_name}\nService Type: {service_type}\n"
+        f"Name: {user_name}\nService Type: {service_type}\n"
         f"Apartment: {apartment}\nStart Date: {formatted_start_date}\nStart Time: {start_time}"
-    )
-
-    notification = messaging.Notification(
-        title=notification_title,
-        body=notification_body,
     )
 
     # Send the message
     try:
         response = messaging.send(messaging.Message(
-            notification=notification,
+            notification=messaging.Notification(
+                title=notification_title,
+                body=notification_body,
+            ),
             token=fcm_token,
         ))
         print(f"Successfully sent message: {response}")
@@ -1850,17 +1852,13 @@ def send_fcm_notification_from_customer(fcm_token, booking_details):
             'message': 'Notification sent successfully',
             'notification': {
                 'title': notification_title,
-                'name': user_name,
-                'service_type': service_type,
-                'apartment': apartment,
-                'start_date': formatted_start_date,
-                'start_time': start_time,   
+                'body': notification_body,
             }
         }
     except Exception as e:
         print(f"Error sending FCM notification: {e}")
-        return {'error': f'Error sending FCM notification: {e}'} 
-
+        return {'error': f'Error sending FCM notification: {e}'}
+        
 @app.route('/send_notification_from_serviceprovider', methods=['POST'])
 @cross_origin()
 def send_notification_from_serviceprovider():
