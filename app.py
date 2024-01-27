@@ -2001,5 +2001,44 @@ def send_fcm_notification_from_service(fcm_token, title, body):
         print(f"Error sending FCM notification: {e}")
         return {'error': f'Error sending FCM notification: {e}'}
 
+
+@app.route('/get_latest_details', methods=['GET'])
+@cross_origin()
+def get_latest_details():
+    try:
+        data = request.json
+        mobile_number = data.get('mobile_number')
+
+        print(f"Received request for mobile_number: {mobile_number}")
+
+        cursor = conn.cursor()
+
+        # Query to retrieve the latest details for the specified mobile number
+        query = (
+            "SELECT TOP 1 user_name, service_type, apartment, StartDate, start_time "
+            "FROM ServiceBookings "
+            "WHERE provider_phone_number = ? "
+            "ORDER BY created_at DESC;"
+        )
+
+        cursor.execute(query, mobile_number)
+        latest_details = cursor.fetchone()
+
+        if latest_details:
+            # Convert the pyodbc.Row object to a dictionary
+            latest_details_dict = dict(zip([column[0] for column in cursor.description], latest_details))
+
+            # Format the StartDate field
+            latest_details_dict['StartDate'] = format_date(latest_details_dict['StartDate'])
+
+            print(f"Latest details for mobile_number {mobile_number}: {latest_details_dict}")
+            return jsonify({'latest_details': latest_details_dict})
+        else:
+            print(f"No details found for mobile_number {mobile_number}")
+            return jsonify({'error': 'No details found for the provided mobile number'}), 404
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
