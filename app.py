@@ -1816,7 +1816,6 @@ def format_date(start_date):
         raise ValueError("Invalid start_date format")
 
     return parsed_date.strftime("%d %b %Y")
-
     
 def send_fcm_notification_from_customer(fcm_token, booking_details):
     # Extract relevant fields from booking details
