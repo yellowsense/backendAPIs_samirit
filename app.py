@@ -2000,44 +2000,72 @@ def send_fcm_notification_from_service(fcm_token, title, body):
         print(f"Error sending FCM notification: {e}")
         return {'error': f'Error sending FCM notification: {e}'}
 
-
 @app.route('/get_latest_details', methods=['GET'])
 @cross_origin()
 def get_latest_details():
     try:
-        data = request.json
-        mobile_number = data.get('mobile_number')
+        mobile_number = request.args.get('mobile_number')
 
         print(f"Received request for mobile_number: {mobile_number}")
 
         cursor = conn.cursor()
 
-        # Query to retrieve the latest details for the specified mobile number
+        # Query to retrieve the latest 5 details for the specified mobile number
         query = (
-            "SELECT TOP 1 user_name, service_type, apartment, StartDate, start_time "
+            "SELECT TOP 5 user_name, service_type, apartment, StartDate, start_time, status "
             "FROM ServiceBookings "
             "WHERE provider_phone_number = ? "
             "ORDER BY created_at DESC;"
         )
 
         cursor.execute(query, mobile_number)
-        latest_details = cursor.fetchone()
+        latest_details = cursor.fetchall()
 
         if latest_details:
-            # Convert the pyodbc.Row object to a dictionary
-            latest_details_dict = dict(zip([column[0] for column in cursor.description], latest_details))
+            # Convert the pyodbc.Row objects to a list of dictionaries
+            result = []
+            for details in latest_details:
+                details_dict = dict(zip([column[0] for column in cursor.description], details))
+                try:
+                    # Format the StartDate field using the format_date function
+                    details_dict['StartDate'] = format_date(details_dict['StartDate'])
+                    result.append(details_dict)
+                except ValueError as ve:
+                    print(f"Error formatting date: {ve}")
 
-            # Format the StartDate field
-            latest_details_dict['StartDate'] = format_date(latest_details_dict['StartDate'])
-
-            print(f"Latest details for mobile_number {mobile_number}: {latest_details_dict}")
-            return jsonify({'latest_details': latest_details_dict})
+            print(f"Latest details for mobile_number {mobile_number}: {result}")
+            return jsonify({'latest_details': result})
         else:
-            print(f"No details found for mobile_number {mobile_number}")
-            return jsonify({'error': 'No details found for the provided mobile number'}), 404
+            # If there are no latest details, retrieve all details (up to 5)
+            all_details_query = (
+                "SELECT user_name, service_type, apartment, StartDate, start_time, status "
+                "FROM ServiceBookings "
+                "WHERE provider_phone_number = ? "
+                "ORDER BY created_at DESC;"
+            )
+
+            cursor.execute(all_details_query, mobile_number)
+            all_details = cursor.fetchall()
+
+            if all_details:
+                # Convert the pyodbc.Row objects to a list of dictionaries
+                result = []
+                for details in all_details:
+                    details_dict = dict(zip([column[0] for column in cursor.description], details))
+                    try:
+                        # Format the StartDate field using the format_date function
+                        details_dict['StartDate'] = format_date(details_dict['StartDate'])
+                        result.append(details_dict)
+                    except ValueError as ve:
+                        print(f"Error formatting date: {ve}")
+
+                print(f"All available details for mobile_number {mobile_number}: {result}")
+                return jsonify({'latest_details': result})
+            else:
+                print(f"No details found for mobile_number {mobile_number}")
+                return jsonify({'error': 'No details found for the provided mobile number'}), 404
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 if __name__ == '__main__':
     app.run(debug=True)
