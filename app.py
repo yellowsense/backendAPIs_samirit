@@ -33,6 +33,7 @@ def add_headers(response):
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
     return response
 
+
 @app.route('/society_names', methods=['OPTIONS', 'GET', 'POST', 'HEAD'])
 @cross_origin()
 def get_society_names():
