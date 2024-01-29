@@ -672,7 +672,8 @@ def delete_maid_by_mobile():
     except Exception as e:
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
-    
+
+
 @app.route('/update_maid_by_mobile', methods=['PUT'])
 @cross_origin()
 def update_maid_by_mobile():
@@ -682,6 +683,7 @@ def update_maid_by_mobile():
         user_mobile_number = data.get('user_mobile_number')
         new_mobile_number = data.get('new_mobile_number')
         name = data.get('name')
+        email = data.get('email')
         services = data.get('services')
         locations = data.get('locations')
         timings = data.get('timings')
@@ -815,7 +817,18 @@ def update_maid_by_mobile():
             update_query_accountdetails+= " Services = ?,"
             update_params_accountdetails.append(data['services'])
 
-        
+        if email is not None:
+            update_query_accountdetails+= " Email = ?,"
+            update_params_accountdetails.append(data['email'])
+
+        if locations is not None:
+            update_query_accountdetails+= " Location = ?,"
+            update_params_accountdetails.append(data['locations'])
+
+        if languages is not None:
+            update_query_accountdetails+= " Languages = ?,"
+            update_params_accountdetails.append(data['languages'])
+
 
         # Remove the trailing comma if there are updates
         if update_params:
@@ -858,6 +871,7 @@ def update_maid_by_mobile():
         cursor.execute("ROLLBACK TRANSACTION;")
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
+
 
 @app.route('/get_customer/<string:mobile_number>', methods=['GET'])
 @cross_origin()
