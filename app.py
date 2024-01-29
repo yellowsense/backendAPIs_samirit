@@ -1681,6 +1681,10 @@ def get_maid_by_phone():
         if not maid:
             return jsonify({"error": "Maid not found for the provided phone number"}), 404
 
+        # Check if the maid with the given phone number exists in accountdetails table
+        cursor.execute('SELECT * FROM accountdetails WHERE MobileNumber = ?', (phone_number,))
+        account_details = cursor.fetchone()
+
         # Convert the result to a dictionary for JSON response
         maid_details = {
             "ID": maid.ID,
@@ -1688,17 +1692,21 @@ def get_maid_by_phone():
             "Gender": maid.Gender,
             "PhoneNumber": maid.PhoneNumber,
             "Services": maid.Services.split(',') if maid.Services else [],
-            "Locations": maid.Locations.split(',') if maid.Locations else [],
+            "Locations": maid.Locations.split(',') if maid.Locations else [] if maid.Locations is not None else [],
             "Timings": maid.Timings.split(',') if maid.Timings else [],
             "Rating": maid.RATING,
-            "Region": maid.Region.split(',') if maid.Region else [],
-            "Languages":maid.languages.split(',') if maid.languages else [],
-            "AadharNumber":maid.AadharNumber,
-            "years_of_experience":maid.years_of_experience,
-            "Sunday_availability":maid.Sunday_availability,
-            "Description":maid.description,
+            "Region": maid.Region.split(',') if maid.Region else [] if maid.Region is not None else [],
+            "Languages": maid.Languages.split(',') if maid.Languages else [] if maid.Languages is not None else [],
+            "AadharNumber": maid.AadharNumber,
+            "Years_of_Experience": maid.Years_of_Experience,
+            "Sunday_Availability": maid.Sunday_Availability,
+            "Description": maid.Description,
             # ... (add other fields as needed)
         }
+
+        if account_details:
+            # Include the 'Email' field from accountdetails table
+            maid_details["Email"] = account_details.Email
 
         return jsonify({"maid_details": maid_details})
 
