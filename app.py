@@ -26,9 +26,6 @@ except pyodbc.Error as e:
     app.logger.error("Error connecting to the database: %s", e)
     raise
 
-
-
-
 # Function to add custom headers to every response
 @app.after_request
 def add_headers(response): 
