@@ -1222,7 +1222,7 @@ def ongoing_requests():
     provider_mobile = request.args.get('provider_mobile')
 
     # Execute raw SQL query to count ongoing (accepted) requests
-    ongoing_query = f"SELECT COUNT(*) FROM ServiceBookings WHERE provider_phone_number = '{provider_mobile}' AND status = 'accepted';"
+    ongoing_query = f"SELECT COUNT(*) FROM ServiceBookings WHERE provider_phone_number = '{provider_mobile}' AND status = 'accept';"
     cursor.execute(ongoing_query)
     ongoing_count = cursor.fetchone()[0]
 
@@ -1238,7 +1238,7 @@ def cancelled_requests():
     provider_mobile = request.args.get('provider_mobile')
 
     # Execute raw SQL query to count canceled (rejected) requests
-    cancelled_query = f"SELECT COUNT(*) FROM ServiceBookings WHERE provider_phone_number = '{provider_mobile}' AND status = 'rejected';"
+    cancelled_query = f"SELECT COUNT(*) FROM ServiceBookings WHERE provider_phone_number = '{provider_mobile}' AND status = 'reject';"
     cursor.execute(cancelled_query)
     cancelled_count = cursor.fetchone()[0]
 
@@ -1253,7 +1253,7 @@ def customer_ongoing_requests():
     customer_mobile = request.args.get('customer_mobile')
 
     # Execute raw SQL query to count ongoing (accepted) requests for the customer
-    ongoing_query = f"SELECT COUNT(*) FROM ServiceBookings WHERE user_phone_number = '{customer_mobile}' AND status = 'accepted';"
+    ongoing_query = f"SELECT COUNT(*) FROM ServiceBookings WHERE user_phone_number = '{customer_mobile}' AND status = 'accept';"
     cursor.execute(ongoing_query)
     ongoing_count = cursor.fetchone()[0]
 
@@ -1269,7 +1269,7 @@ def customer_cancelled_requests():
     customer_mobile = request.args.get('customer_mobile')
 
     # Execute raw SQL query to count canceled (rejected) requests for the customer
-    cancelled_query = f"SELECT COUNT(*) FROM ServiceBookings WHERE user_phone_number = '{customer_mobile}' AND status = 'rejected';"
+    cancelled_query = f"SELECT COUNT(*) FROM ServiceBookings WHERE user_phone_number = '{customer_mobile}' AND status = 'reject';"
     cursor.execute(cancelled_query)
     cancelled_count = cursor.fetchone()[0]
 
@@ -1287,15 +1287,15 @@ def get_requests():
     if request_type is None:
         # If request_type is not provided, return counts for all types
         total_count = get_request_count(provider_mobile, 'total')
-        accepted_count = get_request_count(provider_mobile, 'accepted')
-        rejected_count = get_request_count(provider_mobile, 'rejected')
+        accepted_count = get_request_count(provider_mobile, 'accept')
+        rejected_count = get_request_count(provider_mobile, 'reject')
 
         response = {
             'total_requests': total_count,
             'accepted_requests': accepted_count,
             'rejected_requests': rejected_count
         }
-    elif request_type == 'total' or request_type == 'accepted' or request_type == 'rejected':
+    elif request_type == 'total' or request_type == 'accepted' or request_type == 'reject':
         # If request_type is provided, return count for the specified type
         count = get_request_count(provider_mobile, request_type)
 
@@ -1310,10 +1310,10 @@ def get_requests():
 def get_request_count(provider_mobile, request_type):
     if request_type == 'total':
         status_condition = ""  # Empty condition to get the total count
-    elif request_type == 'accepted':
-        status_condition = "status = 'accepted'"
-    elif request_type == 'rejected':
-        status_condition = "status = 'rejected'"
+    elif request_type == 'accept':
+        status_condition = "status = 'accept'"
+    elif request_type == 'reject':
+        status_condition = "status = 'reject'"
     else:
         raise ValueError('Invalid request_type')
 
@@ -1334,7 +1334,7 @@ def get_requests_details():
     provider_mobile = request.args.get('provider_mobile')
     request_status = request.args.get('request_status')  # 'accepted', 'rejected', or 'total'
 
-    if request_status not in ['accepted', 'rejected', 'total']:
+    if request_status not in ['accept', 'reject', 'total']:
         return jsonify({'error': 'Invalid request_status'}), 400
 
     # Execute raw SQL query to retrieve details based on the specified status
