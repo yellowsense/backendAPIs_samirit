@@ -336,7 +336,7 @@ def confirm_maid_booking():
             cursor.execute("""
                 INSERT INTO ServiceBookings
                 (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
-                special_requirements, house_size, complete_address, user_phone_number)
+                special_requirements, house_size, user_address, user_phone_number)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (provider_name, service_type, user_name, apartment, StartDate, start_time, user_email,
                   special_requirements, house_size, complete_address, user_phone_number))
