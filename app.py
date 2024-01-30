@@ -2087,5 +2087,40 @@ def get_latest_details():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/store_booking', methods=['POST'])
+@cross_origin()
+def store_booking():
+    try:
+        # Assuming JSON payload with optional keys: houseno, roadname, pincode, Name, new_mobilenumber
+        booking_details = request.json
+
+        # Extract individual fields from the JSON payload
+        houseno = booking_details.get('houseno', '')
+        roadname = booking_details.get('roadname', '')
+        pincode = booking_details.get('pincode', '')
+
+        # Combine houseno, roadname, pincode into a single user_address column separated by comma
+        user_address = ', '.join(filter(None, [houseno, roadname, pincode]))
+
+        # Extract other details
+        user_name = booking_details.get('Name', '')
+        new_mobile_number = booking_details.get('new_mobilenumber', '')
+
+        # Insert data into the ServiceBookings table
+        cursor.execute("""
+            INSERT INTO ServiceBookings
+            (user_address, user_name, new_mobilenumber)
+            VALUES (?, ?, ?)
+        """, (user_address, user_name, new_mobile_number))
+        
+        conn.commit()
+
+        return jsonify({'message': 'Booking stored successfully'})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
