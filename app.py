@@ -2122,5 +2122,76 @@ def store_booking():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/insertaddress', methods=['POST'])
+@cross_origin()
+def insert_address():
+    try:
+        # Assuming JSON payload with optional keys: houseno, roadname, pincode, Name, new_mobilenumber
+        details = request.json
+         # Extract other details
+        registermobilenumber = details.get('registermobilenumber')
+        user_name = details.get('Name', '')
+        mobile_number = details.get('mobilenumber')
+        # Extract individual fields from the JSON payload
+        houseno = details.get('houseno', '')
+        roadname = details.get('roadname', '')
+        pincode = details.get('pincode', '')
+
+        # Combine houseno, roadname, pincode into a single user_address column separated by comma
+        user_address = ', '.join(filter(None, [houseno, roadname, pincode]))
+
+
+        # Insert data into the ServiceBookings table
+        cursor.execute("""
+            INSERT INTO address
+            (address, name, mobilenumber,registermobilenumber)
+            VALUES (?, ?, ?, ?)
+        """, (user_address, user_name, mobile_number, registermobilenumber ))
+        
+        conn.commit()
+
+        return jsonify({'message': 'Details inserted successfully'})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+
+@app.route('/address_details', methods=['GET'])
+@cross_origin()
+def address_details():
+    register_mobilenumber = request.args.get('registermobilenumber')
+
+    if not register_mobilenumber:
+        return jsonify({"error": "Missing 'registermobilenumber' parameter"}), 400
+
+    try:
+        cursor.execute("SELECT * FROM address WHERE registermobilenumber = ?", (register_mobilenumber,))
+        address_details_list = cursor.fetchall()
+    except pyodbc.Error as e:
+        app.logger.error("Error executing SQL query: %s", e)
+        return jsonify({"error": "Error executing SQL query"}), 500
+
+    if not address_details_list:
+        return jsonify({"error": "Address not found"}), 404
+
+    # Convert the result to a list of dictionaries for JSON response
+    result_list = []
+    for address_details in address_details_list:
+        result_dict = {
+            "id": address_details.id,  # replace with the actual column name
+            "registermobilenumber": address_details.registermobilenumber,  # replace with the actual column name
+            "mobilenumber": address_details.mobilenumber,  # replace with the actual column name
+            "name": address_details.name,  # replace with the actual column name
+            "address": {
+                "houseno": address_details.address.split(',')[0].strip(),
+                "roadname": address_details.address.split(',')[1].strip(),
+                "pincode": address_details.address.split(',')[2].strip()
+            }
+        }
+        result_list.append(result_dict)
+
+    return jsonify(result_list)
+
 if __name__ == '__main__':
     app.run(debug=True)
