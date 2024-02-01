@@ -1195,7 +1195,7 @@ def booking_accept_reject():
     if booking:
         if action == 'accept':
             # Execute raw SQL query to update the booking status
-            update_query = f"UPDATE ServiceBookings SET status = 'accepted' WHERE id = {booking.id};"
+            update_query = f"UPDATE ServiceBookings SET status = 'accept' WHERE id = {booking.id};"
             cursor.execute(update_query)
             provider_details_query = f"SELECT * FROM maidreg WHERE PhoneNumber = '{provider_phone}';"
             cursor.execute(provider_details_query)
@@ -1221,7 +1221,7 @@ def booking_accept_reject():
                 return jsonify({'message': 'Provider details not found'})
         elif action == 'reject':
             # Execute raw SQL query to update the booking status
-            update_query = f"UPDATE ServiceBookings SET status = 'rejected' WHERE id = {booking.id};"
+            update_query = f"UPDATE ServiceBookings SET status = 'reject' WHERE id = {booking.id};"
             cursor.execute(update_query)
             conn.commit()
             return jsonify({'message': 'Booking rejected'})
