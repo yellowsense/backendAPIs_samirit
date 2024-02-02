@@ -1843,6 +1843,7 @@ def send_fcm_notification_from_customer(fcm_token, booking_details):
     apartment = booking_details.get('apartment', '')
     start_date = booking_details.get('StartDate', '')
     start_time = booking_details.get('start_time', '')
+    user_phone_number = booking_details.get('user_phone_number','')
 
     # Format the start_date
     formatted_start_date = format_date(start_date)
@@ -1851,7 +1852,8 @@ def send_fcm_notification_from_customer(fcm_token, booking_details):
     notification_title = "Job Request"
     notification_body = (
         f"Name: {user_name}\nService Type: {service_type}\n"
-        f"Apartment: {apartment}\nStart Date: {formatted_start_date}\nStart Time: {start_time}"
+        f"Apartment: {apartment}\nStart Date: {formatted_start_date}\nStart Time: {start_time}\n"
+        f"User_phone_number: {user_phone_number}"
     )
 
     # Send the message
