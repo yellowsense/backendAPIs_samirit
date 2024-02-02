@@ -2197,7 +2197,11 @@ def address_details():
 @app.route('/exotelaccept', methods=['GET'])
 def exotelaccept():
     try:
-        data = request.get_json()
+        data = request.args.to_dict()
+
+        if not data:
+            return jsonify({'error': 'No query parameters provided'}), 400
+
         print('status: accept', data)
 
         # You can process the data here as needed
@@ -2209,7 +2213,11 @@ def exotelaccept():
 @app.route('/exotelreject', methods=['GET'])
 def exotelreject():
     try:
-        data = request.get_json()
+        data = request.args.to_dict()
+
+        if not data:
+            return jsonify({'error': 'No query parameters provided'}), 400
+
         print('status: reject', data)
 
         # You can process the data here as needed
