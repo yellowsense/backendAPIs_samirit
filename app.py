@@ -2194,7 +2194,7 @@ def address_details():
 
     return jsonify(result_list)
 
-@app.route('/exotelaccept', methods=['POST'])
+@app.route('/exotelaccept', methods=['GET'])
 def exotelaccept():
     try:
         data = request.get_json()
@@ -2206,7 +2206,7 @@ def exotelaccept():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/exotelreject', methods=['POST'])
+@app.route('/exotelreject', methods=['GET'])
 def exotelreject():
     try:
         data = request.get_json()
