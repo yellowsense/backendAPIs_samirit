@@ -1853,7 +1853,7 @@ def send_fcm_notification_from_customer(fcm_token, booking_details):
     notification_body = (
         f"Name: {user_name}\nService Type: {service_type}\n"
         f"Apartment: {apartment}\nStart Date: {formatted_start_date}\nStart Time: {start_time}\n"
-        f"User_phone_number: {user_phone_number}"
+        f"Customer_phone_number: {user_phone_number}"
     )
 
     # Send the message
