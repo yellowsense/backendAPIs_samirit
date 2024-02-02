@@ -2194,5 +2194,29 @@ def address_details():
 
     return jsonify(result_list)
 
+@app.route('/exotelaccept', methods=['POST'])
+def exotelaccept():
+    try:
+        data = request.get_json()
+        print('status: accept', data)
+
+        # You can process the data here as needed
+
+        return jsonify({'status': 'success'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/exotelreject', methods=['POST'])
+def exotelreject():
+    try:
+        data = request.get_json()
+        print('status: reject', data)
+
+        # You can process the data here as needed
+
+        return jsonify({'status': 'success'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
