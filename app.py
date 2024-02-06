@@ -1690,6 +1690,7 @@ def get_maid_by_phone():
             "Name": maid.Name,
             "Gender": maid.Gender,
             "PhoneNumber": maid.PhoneNumber,
+            "Age": maid.Age,
             "Services": maid.Services.split(',') if maid.Services else [],
             "Locations": maid.Locations.split(',') if maid.Locations else [] if maid.Locations is not None else [],
             "Timings": maid.Timings.split(',') if maid.Timings else [],
@@ -2089,41 +2090,6 @@ def get_latest_details():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-@app.route('/store_booking', methods=['POST'])
-@cross_origin()
-def store_booking():
-    try:
-        # Assuming JSON payload with optional keys: houseno, roadname, pincode, Name, new_mobilenumber
-        booking_details = request.json
-
-        # Extract individual fields from the JSON payload
-        houseno = booking_details.get('houseno', '')
-        roadname = booking_details.get('roadname', '')
-        pincode = booking_details.get('pincode', '')
-
-        # Combine houseno, roadname, pincode into a single user_address column separated by comma
-        user_address = ', '.join(filter(None, [houseno, roadname, pincode]))
-
-        # Extract other details
-        user_name = booking_details.get('Name', '')
-        new_mobile_number = booking_details.get('new_mobilenumber', '')
-
-        # Insert data into the ServiceBookings table
-        cursor.execute("""
-            INSERT INTO ServiceBookings
-            (user_address, user_name, new_mobilenumber)
-            VALUES (?, ?, ?)
-        """, (user_address, user_name, new_mobile_number))
-        
-        conn.commit()
-
-        return jsonify({'message': 'Booking stored successfully'})
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
 @app.route('/insertaddress', methods=['POST'])
 @cross_origin()
 def insert_address():
@@ -2193,6 +2159,50 @@ def address_details():
         result_list.append(result_dict)
 
     return jsonify(result_list)
+
+
+def execute_query(query, parameters=None):
+    cursor.execute(query, parameters)
+    return cursor.fetchone()
+
+@app.route('/get_service_provider', methods=['GET'])
+@cross_origin()
+def get_service_provider():
+    try:
+        mobile_number = request.args.get('mobile_number')
+
+        # Fetch data from maidreg table
+        cursor.execute("SELECT Description, ID, RATING, Region, Second_Category, Sunday_Availability, Timings, Years_of_Experience FROM maidreg WHERE PhoneNumber = ?", (mobile_number,))
+        maidreg_data = cursor.fetchone()
+
+        # Fetch data from accountdetails table
+        cursor.execute("SELECT * FROM accountdetails WHERE MobileNumber = ?", (mobile_number,))
+        accountdetails_data = cursor.fetchone()
+
+        serviceproviders_data = {}
+
+        if maidreg_data:
+            maidreg_columns = ["Description", "ID", "RATING", "Region", "Second_Category", "Sunday_Availability", "Timings", "Years_of_Experience"]
+            serviceproviders_data.update(
+                dict(zip(maidreg_columns, maidreg_data))
+            )
+
+        if accountdetails_data:
+            # Exclude the common columns with maidreg_data
+            excluded_columns = [column[0] for column in cursor.description if column[0] in serviceproviders_data]
+            accountdetails_columns = [column[0] for column in cursor.description if column[0] not in excluded_columns]
+
+            serviceproviders_data.update(
+                dict(zip(accountdetails_columns, accountdetails_data))
+            )
+
+        if serviceproviders_data:
+            return jsonify({'serviceproviders': serviceproviders_data})
+        else:
+            return jsonify({'error': 'Service provider not found for the given mobile number'})
+
+    except Exception as e:
+        return jsonify({'error': str(e)})
 
 @app.route('/exotelaccept', methods=['GET'])
 def exotelaccept():
