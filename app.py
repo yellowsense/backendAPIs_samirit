@@ -498,7 +498,6 @@ def signin():
             "VALUES (?, ?, ?, ?, ?)",
             (username, mobile_number, email, password, role)
         )
-
         # If the role is "service," check the maidreg table
         if role == 'Servicer':
             cursor.execute(
