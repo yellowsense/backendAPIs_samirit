@@ -671,7 +671,6 @@ def delete_maid_by_mobile():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
-
 @app.route('/update_maid_by_mobile', methods=['PUT'])
 @cross_origin()
 def update_maid_by_mobile():
