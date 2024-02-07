@@ -2089,6 +2089,60 @@ def get_service_provider():
     except Exception as e:
         return jsonify({'error': str(e)})
 
+
+# Function to store data in SQL Server table and send email
+def store_and_email(data):
+    try:
+        # Store data in the SQL Server table
+        cursor.execute("""
+            INSERT INTO CustomerService (MobileNumber, ServiceType, StartDate, Apartment, Area, StartTime, Email)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, data['MobileNumber'], data.get('ServiceType'), data.get('StartDate'), data.get('Apartment'),
+           data.get('Area'), data.get('StartTime'), data.get('Email'))
+        conn.commit()
+
+        # Send email to orders@yellowsense.in
+        order_msg = Message('New Customer Service Order', recipients=['orders@yellowsense.in'])
+        
+        # Format the order details for better readability
+        order_details = f"""
+        New order details:
+
+        Mobile Number: {data['MobileNumber']}
+        Service Type: {data.get('ServiceType', 'Not specified')}
+        Start Date: {data.get('StartDate', 'Not specified')}
+        Apartment: {data.get('Apartment', 'Not specified')}
+        Area: {data.get('Area', 'Not specified')}
+        Start Time: {data.get('StartTime', 'Not specified')}
+        Email: {data.get('Email', 'Not specified')}
+        """
+
+        order_msg.body = order_details
+        mail.send(order_msg)
+
+        # Check if the customer provided an email
+        customer_email = data.get('Email')
+        if customer_email:
+            # Send personalized confirmation email to the customer
+            customer_msg = Message('Order Confirmation', recipients=[customer_email])
+            customer_msg.body = f"Thank you for your order! Our team is excited to assist you with your {data.get('ServiceType', 'service')} on {data.get('StartDate', 'the scheduled date')}. Our employee will contact you shortly to discuss the details and ensure a smooth experience."
+            mail.send(customer_msg)
+
+        return True
+    except pyodbc.Error as e:
+        app.logger.error("Error storing data and sending email: %s", e)
+        return False
+
+
+@app.route('/store_and_email', methods=['POST'])
+def handle_store_and_email():
+    data = request.json
+
+    if store_and_email(data):
+        return jsonify({'message': 'Data stored and email sent successfully'}), 200
+    else:
+        return jsonify({'message': 'Error storing data and sending email'}), 500
+
 @app.route('/exotelaccept', methods=['GET'])
 def exotelaccept():
     try:
