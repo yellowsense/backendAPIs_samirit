@@ -2025,7 +2025,7 @@ def address_details():
         return jsonify({"error": "Error executing SQL query"}), 500
 
     if not address_details_list:
-        return jsonify({"error": "Address not found"}), 404
+        return jsonify([])
 
     # Convert the result to a list of dictionaries for JSON response
     result_list = []
