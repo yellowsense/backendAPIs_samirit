@@ -139,16 +139,8 @@ def get_maid_details(maid_id):
         row = cursor.fetchone()
 
         if row:
-            maid_details = {
-                "ID": row.ID,
-                "AadharNumber": row.AadharNumber,
-                "Name": row.Name,
-                "PhoneNumber": row.PhoneNumber,
-                "Gender": row.Gender,
-                "Services": [serv.strip().strip("'").lower() for serv in row.Services.split(',')],
-                "Locations": row.Locations.split(','),
-                "Timings": [timing.strip().strip("'") for timing in row.Timings.split(',')]
-            }
+            column_names = [column[0] for column in cursor.description]
+            maid_details = {column_names[i]: row[i] for i in range(len(column_names))}
             return jsonify(maid_details)
         else:
             return jsonify({"error": "Maid not found"})
