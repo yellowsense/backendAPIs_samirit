@@ -944,7 +944,7 @@ def convert_time_to_string(time_obj, use_12_hour_format=True):
     else:
         return time_obj.strftime('%H:%M')
 
-
+   
 @app.route('/booking', methods=['POST'])
 @cross_origin()
 def booking():
@@ -986,9 +986,10 @@ def booking():
             start_date = data.get('start_date')  # Assuming you still need this field
             service = data.get('service_type')  # Assuming you still need this field
             apartment = data.get('apartment')
+            area = data.get('area')  # New field for the apartment area
 
             # Insert into ServiceBookings and retrieve the last inserted ID
-            cursor.execute('INSERT INTO ServiceBookings (user_phone_number, provider_phone_number, customer_status, user_name, provider_name, start_time, StartDate, service_type, apartment) OUTPUT INSERTED.id VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', (customer_mobile_number, provider_mobile_number, status, customer_username, provider_name, start_time, start_date, service, apartment))
+            cursor.execute('INSERT INTO ServiceBookings (user_phone_number, provider_phone_number, customer_status, user_name, provider_name, start_time, StartDate, service_type, apartment, Region) OUTPUT INSERTED.id VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (customer_mobile_number, provider_mobile_number, status, customer_username, provider_name, start_time, start_date, service, apartment, area))
             last_inserted_id = cursor.fetchone().id
             conn.commit()
 
@@ -1002,6 +1003,7 @@ def booking():
                     sb.StartDate,
                     sb.service_type,
                     sb.apartment,
+                    sb.Region,  -- Added Region field
                     sp.Services AS service_provider_services,
                     sp.Locations AS service_provider_locations,
                     ad.MobileNumber AS user_phone_number,
@@ -1034,6 +1036,7 @@ def booking():
                     "start_date": row.StartDate,
                     "service_type": row.service_type,
                     "apartment": row.apartment,
+                    "area": row.Region,  # Added area field
                     "customer_status": row.customer_status
                 }
 
@@ -1047,7 +1050,7 @@ def booking():
         return jsonify({"error": "Internal Server Error"}), 500
     finally:
         cursor.close()
-
+        
 @app.route('/getcustomermaiddetails', methods=['GET'])
 @cross_origin()
 def get_customer_maid_details():
