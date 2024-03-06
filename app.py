@@ -531,7 +531,7 @@ def login():
         # Execute the SQL query to retrieve user details based on mobile number and password
         cursor.execute(
             "SELECT * FROM accountdetails WHERE MobileNumber=?",
-            (mobile_number, password)
+            (mobile_number)
         )
         row = cursor.fetchone()
 
