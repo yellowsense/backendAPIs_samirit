@@ -460,6 +460,7 @@ def send_cook_confirmation_email(
     recipients = [recipient, 'orders@yellowsense.in']
     msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
+    
 @app.route('/signin', methods=['POST'])
 @cross_origin()
 def signin():
@@ -520,7 +521,7 @@ def signin():
         return jsonify({"error": "Internal Server Error"}), 500
 
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['GET'])
 @cross_origin()
 def login():
     try:
@@ -544,6 +545,7 @@ def login():
     except pyodbc.Error as e:
         # Return an error response with a 500 status code (Internal Server Error)
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/edit_user', methods=['PUT'])
 @cross_origin()
