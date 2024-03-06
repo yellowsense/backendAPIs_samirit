@@ -460,7 +460,6 @@ def send_cook_confirmation_email(
     recipients = [recipient, 'orders@yellowsense.in']
     msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
-
 @app.route('/signin', methods=['POST'])
 @cross_origin()
 def signin():
@@ -469,14 +468,12 @@ def signin():
         data = request.json
         username = data.get('Username')
         mobile_number = data.get('MobileNumber')
-        email = data.get('Email')
-        password = data.get('Passwrd')
         role = data.get('Role')
 
         # Check if the user already exists based on mobile number and password
         cursor.execute(
-            "SELECT * FROM accountdetails WHERE MobileNumber=? AND Passwrd=?",
-            (mobile_number, password)
+            "SELECT * FROM accountdetails WHERE MobileNumber=?",
+            (mobile_number)
         )
         existing_user = cursor.fetchone()
 
@@ -486,9 +483,9 @@ def signin():
 
         # User does not exist, proceed with registration
         cursor.execute(
-            "INSERT INTO accountdetails (Username, MobileNumber, Email, Passwrd, Role) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (username, mobile_number, email, password, role)
+            "INSERT INTO accountdetails (Username, MobileNumber, Role) "
+            "VALUES (?, ?, ?)",
+            (username, mobile_number, role)
         )
         # If the role is "service," check the maidreg table
         if role == 'Servicer':
@@ -530,11 +527,10 @@ def login():
         # Extract parameters from the JSON body for POST requests
         data = request.json
         mobile_number = data.get('MobileNumber')
-        password = data.get('Passwrd')  # Assuming 'Passwrd' is the correct column name
 
         # Execute the SQL query to retrieve user details based on mobile number and password
         cursor.execute(
-            "SELECT * FROM accountdetails WHERE MobileNumber=? AND Passwrd=?",
+            "SELECT * FROM accountdetails WHERE MobileNumber=?",
             (mobile_number, password)
         )
         row = cursor.fetchone()
