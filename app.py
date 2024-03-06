@@ -894,7 +894,7 @@ def customer_details(mobile_number):
 def get_customer_booking_details(customer_mobile_number):
     try:
         # Query booking details for a specific customer from ServiceBookings table
-        booking_sql_query = f"SELECT * FROM ServiceBookings WHERE user_phone_number = '{customer_mobile_number}'"
+        booking_sql_query = f"SELECT * FROM ServiceBookings WHERE user_phone_number = '{customer_mobile_number}' ORDER BY id DESC"
         cursor.execute(booking_sql_query)
         booking_details = cursor.fetchall()
 
@@ -904,24 +904,32 @@ def get_customer_booking_details(customer_mobile_number):
         if not booking_details_list:
             return jsonify({'message': 'No booking details found for the customer'}), 404
 
-        # Get provider details for each booking using a separate SQL query
+        # Process booking details to create provider details list
         provider_details_list = []
         for booking in booking_details_list:
-            provider_mobile_number = booking['provider_phone_number']
-            provider_sql_query = f"SELECT * FROM MaidReg WHERE PhoneNumber = '{provider_mobile_number}'"
-            cursor.execute(provider_sql_query)
-            provider_details = cursor.fetchone()
+            provider_details_dict = {
+                'provider_name': booking['provider_name'],
+                'service_type': booking['service_type'],
+                'status': booking['status'],
+                'ServiceStatus' : booking['ServiceStatus'],
+                'booking_id': booking['id']
+            }
 
-            if provider_details:
-                provider_details_dict = dict(zip([column[0] for column in cursor.description], provider_details))
-                provider_details_dict['booking_id'] = booking['id']
-                provider_details_list.append(provider_details_dict)
+            # If apartment is empty, use Region as the location key
+            if not booking['apartment']:
+                provider_details_dict['location'] = booking['Region']
+            else:
+                # If apartment has a value, use it as the location key
+                provider_details_dict['location'] = booking['apartment']
+
+            provider_details_list.append(provider_details_dict)
 
         return jsonify({'provider_details': provider_details_list})
 
     except Exception as e:
         print(f"Error: {str(e)}")
         return jsonify({"error": "Internal Server Error"}), 500
+
 
 def convert_date_format(date_str):
     try:
