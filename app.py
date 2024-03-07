@@ -105,31 +105,6 @@ def insert_maid():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
-@app.route('/get_all_maid_details', methods=['GET'])
-@cross_origin()
-def get_all_maid_details():
-    try:
-        cursor.execute("SELECT * FROM maidreg")
-        rows = cursor.fetchall()
-
-        maid_details_list = []
-        for row in rows:
-            maid_details = {
-                "ID": row.ID,
-                "AadharNumber": row.AadharNumber,
-                "Name": row.Name,
-                "PhoneNumber": row.PhoneNumber,
-                "Gender": row.Gender,
-                "Services": row.Services.split(',') if row.Services else [],
-                "Locations": row.Locations.split(',') if row.Locations else [],
-                "Timings": row.Timings
-            }
-            maid_details_list.append(maid_details)
-
-        return jsonify({"maid_details": maid_details_list})
-    except pyodbc.Error as e:
-        return jsonify({"error": str(e)})
-
 @app.route('/get_maid_details/<int:maid_id>', methods=['GET'])
 @cross_origin()
 def get_maid_details(maid_id):
@@ -670,7 +645,6 @@ def delete_maid_by_mobile():
     except Exception as e:
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
-
 @app.route('/update_maid_by_mobile', methods=['PUT'])
 @cross_origin()
 def update_maid_by_mobile():
@@ -680,7 +654,6 @@ def update_maid_by_mobile():
         user_mobile_number = data.get('user_mobile_number')
         new_mobile_number = data.get('new_mobile_number')
         name = data.get('name')
-        email = data.get('email')
         services = data.get('services')
         locations = data.get('locations')
         timings = data.get('timings')
@@ -703,23 +676,14 @@ def update_maid_by_mobile():
 
         if not user:
             print(f"User not found in maidreg table for mobile number: {user_mobile_number}")
-            return jsonify({"error": "User not found in maidreg table"}), 404
+            return jsonify({"error": "User not found"}), 404
 
         # Begin the transaction
         cursor.execute("BEGIN TRANSACTION;")
-        cursor.execute('SELECT * FROM accountdetails WHERE MobileNumber = ?', (user_mobile_number,))
-        user_in_accountdetails = cursor.fetchone()
-        print(f"user_in_accountdetails: {user_in_accountdetails}")
-
-        cursor.execute("BEGIN TRANSACTION;")
-
 
         # Update the user profile based on the mobile number
         update_query = "UPDATE maidreg SET"
         update_params = []
-
-        update_query_accountdetails = "UPDATE accountdetails SET"
-        update_params_accountdetails = []
 
 
         if new_mobile_number is not None:
@@ -786,46 +750,6 @@ def update_maid_by_mobile():
             update_query += " pancardnumber = ?,"
             update_params.append(data['pan_card'])
 
-        if name is not None:
-            update_query_accountdetails += " Username = ?,"
-            update_params_accountdetails.append(data['name'])
-
-        if new_mobile_number is not None:
-            update_query_accountdetails += " MobileNumber = ?,"
-            update_params_accountdetails.append(new_mobile_number)
-
-        if aadhar_number is not None:
-            update_query_accountdetails += " AadharCard = ?,"
-            update_params_accountdetails.append(data['aadhar_number'])
-
-        if pan_card is not None:
-            update_query_accountdetails += " PanCardNumber = ?,"
-            update_params_accountdetails.append(data['pan_card'])
-
-        if age is not None:
-            update_query_accountdetails += " Age = ?,"
-            update_params_accountdetails.append(data['age'])
-
-        if gender is not None:
-            update_query_accountdetails += " Gender = ?,"
-            update_params_accountdetails.append(data['gender'])
-
-        if services is not None:
-            update_query_accountdetails+= " Services = ?,"
-            update_params_accountdetails.append(data['services'])
-
-        if email is not None:
-            update_query_accountdetails+= " Email = ?,"
-            update_params_accountdetails.append(data['email'])
-
-        if locations is not None:
-            update_query_accountdetails+= " Location = ?,"
-            update_params_accountdetails.append(data['locations'])
-
-        if languages is not None:
-            update_query_accountdetails+= " Languages = ?,"
-            update_params_accountdetails.append(data['languages'])
-
 
         # Remove the trailing comma if there are updates
         if update_params:
@@ -834,17 +758,6 @@ def update_maid_by_mobile():
             update_params.append(user_mobile_number)
 
             cursor.execute(update_query, tuple(update_params))
-            conn.commit()
-        if update_params_accountdetails:
-            update_query_accountdetails = update_query_accountdetails.rstrip(',')
-            update_query_accountdetails += " WHERE MobileNumber = ?"
-            update_params_accountdetails.append(user_mobile_number)
-
-            cursor.execute(update_query_accountdetails, tuple(update_params_accountdetails))
-            conn.commit()
-
-        cursor.execute(update_query_accountdetails, tuple(update_params_accountdetails))
-        conn.commit()
 
         if name is not None and new_mobile_number is not None:
             cursor.execute(
@@ -862,21 +775,20 @@ def update_maid_by_mobile():
         # Rollback the transaction in case of a primary key violation
         cursor.execute("ROLLBACK TRANSACTION;")
         app.logger.error(str(e))
-        return jsonify({"error": "Duplicate phone number in maidreg or accountdetails table"}), 500
+        return jsonify({"error": "Duplicate phone number in maidreg table"}), 500
     except Exception as e:
         # Rollback the transaction in case of an exception
         cursor.execute("ROLLBACK TRANSACTION;")
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
-
-
+        
 @app.route('/get_customer/<string:mobile_number>', methods=['GET'])
 @cross_origin()
 def customer_details(mobile_number):
     try:
 
         # SQL query to retrieve customer details excluding the password
-        query = f"SELECT UserID, Username, MobileNumber, Email FROM accountdetails WHERE MobileNumber = '{mobile_number}'"
+        query = f"SELECT UserID, Username, MobileNumber FROM accountdetails WHERE MobileNumber = '{mobile_number}'"
         
         # Execute the query
         cursor.execute(query)
@@ -890,7 +802,6 @@ def customer_details(mobile_number):
                 'UserID': customer_details[0],
                 'Username': customer_details[1],
                 'MobileNumber': customer_details[2],
-                'Email': customer_details[3]
             }
             return jsonify(result)
         else:
@@ -1075,7 +986,7 @@ def get_customer_maid_details():
     provider_mobile_number = data.get('provider_mobile_number')
 
     # Fetch provider details from MaidReg based on the provided mobile number
-    sql_query_provider = f"SELECT ID, Name, PhoneNumber, Locations, Services FROM maidreg WHERE PhoneNumber = '{provider_mobile_number}'"
+    sql_query_provider = f"SELECT ID, Name, PhoneNumber, Locations, Region Services FROM maidreg WHERE PhoneNumber = '{provider_mobile_number}'"
     cursor.execute(sql_query_provider)
     provider_details = cursor.fetchone()
 
@@ -1099,6 +1010,7 @@ def get_customer_maid_details():
                 'Name': provider_details.Name,
                 'PhoneNumber': provider_details.PhoneNumber,
                 'Locations': provider_details.Locations,
+                'Region': provider_details.Region,
                 'Services': provider_details.Services,
             }
         }), 200
@@ -1138,6 +1050,7 @@ def booking_accept_reject():
                         'phone_number': provider_details.PhoneNumber,
                         'services': provider_details.Services,
                         'locations': provider_details.Locations,
+                        'Region': provider_details.Region,
                         'timings': provider_details.Timings
                     }
                 }
@@ -1273,59 +1186,6 @@ def profile_details():
 
         cursor.execute("BEGIN TRANSACTION;")
 
-        # Update or insert into accountdetails
-        cursor.execute('SELECT * FROM accountdetails WHERE MobileNumber = ?', (user_mobile_number,))
-        user_in_accountdetails = cursor.fetchone()
-
-        if user_in_accountdetails:
-            update_query_accountdetails = """
-                UPDATE accountdetails
-                SET Username = COALESCE(?, Username),
-                    Services = COALESCE(?, Services),
-                    Gender = COALESCE(?, Gender),
-                    AadharCard = COALESCE(?, AadharCard),
-                    PanCardNumber = COALESCE(?, PanCardNumber),
-                    Age = COALESCE(?, Age),
-                    Location = COALESCE(?, Location),
-                    Languages = COALESCE(?, Languages)
-                WHERE MobileNumber = ?
-            """
-            cursor.execute(
-                update_query_accountdetails,
-                (
-                    data.get('name'),
-                    data.get('services'),
-                    data.get('gender'),
-                    data.get('aadhar_number'),
-                    data.get('pan_card'),
-                    data.get('age'),
-                    data.get('locations'),
-                    data.get('languages'),
-                    user_mobile_number
-                )
-            )
-            conn.commit()
-        else:
-            insert_query_accountdetails = """
-                INSERT INTO accountdetails (MobileNumber, Username, Services, Gender, AadharCard, PanCardNumber, Age, Location, Languages)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """
-            cursor.execute(
-                insert_query_accountdetails,
-                (
-                    user_mobile_number,
-                    data.get('name'),
-                    data.get('services'),
-                    data.get('gender'),
-                    data.get('aadhar_number'),
-                    data.get('pan_card'),
-                    data.get('age'),
-                    data.get('locations'),
-                    data.get('languages')
-                )
-            )
-            conn.commit()
-
         # Update or insert into maidreg
         cursor.execute('SELECT * FROM maidreg WHERE PhoneNumber = ?', (user_mobile_number,))
         user_in_maidreg = cursor.fetchone()
@@ -1411,6 +1271,7 @@ def profile_details():
         cursor.execute("ROLLBACK TRANSACTION;")
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
+        
         
 @app.route('/area_names', methods=['GET'])
 @cross_origin()
@@ -1530,6 +1391,7 @@ def find_matching_service_providers(locations, services, start_time_str, region)
     except pyodbc.Error as e:
         app.logger.error("Error querying service providers: %s", e)
         return {"error": "Error querying service providers"}
+        
 @app.route('/get_matching_service_providers', methods=['GET', 'POST'])
 @cross_origin()
 def get_matching_providers():
@@ -1575,10 +1437,6 @@ def get_maid_by_phone():
         if not maid:
             return jsonify({"error": "Maid not found for the provided phone number"}), 404
 
-        # Check if the maid with the given phone number exists in accountdetails table
-        cursor.execute('SELECT * FROM accountdetails WHERE MobileNumber = ?', (phone_number,))
-        account_details = cursor.fetchone()
-
         # Convert the result to a dictionary for JSON response
         maid_details = {
             "ID": maid.ID,
@@ -1598,11 +1456,7 @@ def get_maid_by_phone():
             "Description": maid.Description,
             # ... (add other fields as needed)
         }
-
-        if account_details:
-            # Include the 'Email' field from accountdetails table
-            maid_details["Email"] = account_details.Email
-
+        
         return jsonify({"maid_details": maid_details})
 
     except Exception as e:
