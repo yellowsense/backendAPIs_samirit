@@ -518,33 +518,28 @@ def signin():
         app.logger.error(str(e))
         # Return an error message with status code 500
         return jsonify({"error": "Internal Server Error"}), 500
-
-
-@app.route('/login', methods=['GET'])
+        
+@app.route('/login/<mobile_number>', methods=['GET'])
 @cross_origin()
-def login():
+def login(mobile_number):
     try:
-        # Extract parameters from the JSON body for POST requests
-        data = request.json
-        mobile_number = data.get('MobileNumber')
-
-        # Execute the SQL query to retrieve user details based on mobile number and password
+        # Execute the SQL query to check if the mobile number is present in the database
         cursor.execute(
             "SELECT * FROM accountdetails WHERE MobileNumber=?",
-            (mobile_number)
+            (mobile_number,)
         )
         row = cursor.fetchone()
 
         if row:
-            # Return a success message with a 200 status code
-            return jsonify({"message": "Login successful"}), 200
+            # If the mobile number is present, return a JSON response with "registered" set to true
+            return jsonify({"Registered": True}), 200
         else:
-            # Return an error response with a 401 status code (Unauthorized)
-            return jsonify({"message": "Invalid credentials"}), 401
+            # If the mobile number is not present, return a JSON response with "registered" set to false
+            return jsonify({"Registered": False}), 200
+
     except pyodbc.Error as e:
         # Return an error response with a 500 status code (Internal Server Error)
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/edit_user', methods=['PUT'])
 @cross_origin()
