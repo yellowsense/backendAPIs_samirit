@@ -459,10 +459,10 @@ def send_cook_confirmation_email(
     recipients = [recipient, 'orders@yellowsense.in']
     msg = Message(subject, recipients=recipients, body=body)
     mail.send(msg)
-    
-@app.route('/signin', methods=['POST'])
+
+@app.route('/signup', methods=['POST'])
 @cross_origin()
-def signin():
+def signup():
     try:
         # Extract parameters from the JSON body for POST requests
         data = request.json
@@ -470,56 +470,48 @@ def signin():
         mobile_number = data.get('MobileNumber')
         role = data.get('Role')
 
-        # Check if the user already exists based on mobile number and password
-        cursor.execute(
-            "SELECT * FROM accountdetails WHERE MobileNumber=?",
-            (mobile_number)
-        )
-        existing_user = cursor.fetchone()
+        if role == 'Customer':
+            # Check if the mobile number is already present in accountdetails
+            cursor.execute("SELECT * FROM accountdetails WHERE MobileNumber=?", (mobile_number,))
+            existing_user = cursor.fetchone()
 
-        if existing_user:
-            # User already exists, return a message with status code 500
-            return jsonify({"message": "User already registered. Please login."}), 500
+            if existing_user:
+                # User already exists, return a message with status code 409 (Conflict)
+                return jsonify({"error": "User already registered. Please login."}), 409
 
-        # User does not exist, proceed with registration
-        cursor.execute(
-            "INSERT INTO accountdetails (Username, MobileNumber, Role) "
-            "VALUES (?, ?, ?)",
-            (username, mobile_number, role)
-        )
-        # If the role is "service," check the maidreg table
-        if role == 'Servicer':
+            # Insert values into accountdetails table
             cursor.execute(
-                "SELECT * FROM maidreg WHERE PhoneNumber=?",
-                (mobile_number,)
+                "INSERT INTO accountdetails (Username, MobileNumber, Role) "
+                "VALUES (?, ?, ?)",
+                (username, mobile_number, role)
             )
+        else:
+            # Check if the mobile number is already present in maidreg
+            cursor.execute("SELECT * FROM maidreg WHERE PhoneNumber=?", (mobile_number,))
             existing_maid = cursor.fetchone()
 
             if existing_maid:
-                # If maid exists, update the values
-                cursor.execute(
-                    "UPDATE maidreg SET Name=? WHERE PhoneNumber=?",
-                    (username, mobile_number)
-                )
-            else:
-                # If maid doesn't exist, insert a new row
-                cursor.execute(
-                    "INSERT INTO maidreg (Name, PhoneNumber) "
-                    "VALUES (?, ?)",
-                    (username, mobile_number)
-                )
+                # User already exists, return a message with status code 409 (Conflict)
+                return jsonify({"error": "User already registered as a Servicer. Please login."}), 409
+
+            # Insert values into maidreg table
+            cursor.execute(
+                "INSERT INTO maidreg (Name, PhoneNumber) "
+                "VALUES (?, ?)",
+                (username, mobile_number)
+            )
 
         conn.commit()
 
         # Return a success message with status code 200
         return jsonify({"message": "User registration successful"}), 200
 
-    except Exception as e:
+    except pyodbc.Error as e:
         app.logger.error(str(e))
         # Return an error message with status code 500
         return jsonify({"error": "Internal Server Error"}), 500
         
-@app.route('/login/<mobile_number>', methods=['GET'])
+@app.route('/customer_login/<mobile_number>', methods=['GET'])
 @cross_origin()
 def login(mobile_number):
     try:
@@ -540,6 +532,29 @@ def login(mobile_number):
     except pyodbc.Error as e:
         # Return an error response with a 500 status code (Internal Server Error)
         return jsonify({"error": str(e)}), 500
+        
+@app.route('/serviceprovider_login/<mobile_number>', methods=['GET'])
+@cross_origin()
+def serviceproviderlogin(mobile_number):
+    try:
+        # Execute the SQL query to check if the mobile number is present in the database
+        cursor.execute(
+            "SELECT * FROM maidreg WHERE PhoneNumber=?",
+            (mobile_number,)
+        )
+        row = cursor.fetchone()
+
+        if row:
+            # If the mobile number is present, return a JSON response with "registered" set to true
+            return jsonify({"Registered": True}), 200
+        else:
+            # If the mobile number is not present, return a JSON response with "registered" set to false
+            return jsonify({"Registered": False}), 200
+
+    except pyodbc.Error as e:
+        # Return an error response with a 500 status code (Internal Server Error)
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/edit_user', methods=['PUT'])
 @cross_origin()
