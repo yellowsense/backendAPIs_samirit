@@ -729,43 +729,46 @@ def booking():
 @app.route('/getcustomermaiddetails', methods=['GET'])
 @cross_origin()
 def get_customer_maid_details():
-    data = request.args  # Use request.args for GET requests
+    try:
+        data = request.args
 
-    customer_mobile_number = data.get('customer_mobile_number')
-    provider_mobile_number = data.get('provider_mobile_number')
+        customer_mobile_number = data.get('customer_mobile_number')
+        provider_mobile_number = data.get('provider_mobile_number')
 
-    # Fetch provider details from MaidReg based on the provided mobile number
-    sql_query_provider = f"SELECT ID, Name, PhoneNumber, Locations, Region Services FROM maidreg WHERE PhoneNumber = '{provider_mobile_number}'"
-    cursor.execute(sql_query_provider)
-    provider_details = cursor.fetchone()
+        # Fetch provider details from MaidReg based on the provided mobile number
+        sql_query_provider = f"SELECT ID, Name, PhoneNumber, Locations, Region, Services FROM maidreg WHERE PhoneNumber = '{provider_mobile_number}'"
+        cursor.execute(sql_query_provider)
+        provider_details = cursor.fetchone()
 
-    # Fetch customer details from AccountDetails based on the provided mobile number
-    sql_query_customer = f"SELECT UserID, Username, MobileNumber FROM accountdetails WHERE MobileNumber = '{customer_mobile_number}'"
-    cursor.execute(sql_query_customer)
-    customer_details = cursor.fetchone()
+        # Fetch customer details from AccountDetails based on the provided mobile number
+        sql_query_customer = f"SELECT UserID, Username, MobileNumber FROM accountdetails WHERE MobileNumber = '{customer_mobile_number}'"
+        cursor.execute(sql_query_customer)
+        customer_details = cursor.fetchone()
 
-    if provider_details and customer_details:
-        # Your existing code for processing and returning the details
+        if provider_details and customer_details:
+            # Process and return the details
+            return jsonify({
+                'message': 'Details fetched successfully!',
+                'customer_details': {
+                    'UserID': customer_details.UserID,
+                    'Username': customer_details.Username,
+                    'MobileNumber': customer_details.MobileNumber,
+                },
+                'provider_details': {
+                    'ID': provider_details.ID,
+                    'Name': provider_details.Name,
+                    'PhoneNumber': provider_details.PhoneNumber,
+                    'Locations': provider_details.Locations,
+                    'Region': provider_details.Region,
+                    'Services': provider_details.Services,
+                }
+            }), 200
+        else:
+            return jsonify({'message': 'Provider or Customer not found!'}), 404
 
-        return jsonify({
-            'message': 'Details fetched successfully!',
-            'customer_details': {
-                'UserID': customer_details.UserID,
-                'Username': customer_details.Username,
-                'MobileNumber': customer_details.MobileNumber,
-            },
-            'provider_details': {
-                'ID': provider_details.ID,
-                'Name': provider_details.Name,
-                'PhoneNumber': provider_details.PhoneNumber,
-                'Locations': provider_details.Locations,
-                'Region': provider_details.Region,
-                'Services': provider_details.Services,
-            }
-        }), 200
-    else:
-        return jsonify({'message': 'Provider or Customer not found!'}),404
-
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+        
 @app.route('/booking_accept_reject', methods=['POST'])
 @cross_origin()
 def booking_accept_reject():
