@@ -619,7 +619,6 @@ def convert_time_to_string(time_obj, use_12_hour_format=True):
     else:
         return time_obj.strftime('%H:%M')
 
-   
 @app.route('/booking', methods=['POST'])
 @cross_origin()
 def booking():
@@ -661,10 +660,11 @@ def booking():
             start_date = data.get('start_date')  # Assuming you still need this field
             service = data.get('service_type')  # Assuming you still need this field
             apartment = data.get('apartment')
-            area = data.get('area')  # New field for the apartment area
+            area = data.get('area')
+            user_address = data.get('user_address')  # New field for the apartment area
 
             # Insert into ServiceBookings and retrieve the last inserted ID
-            cursor.execute('INSERT INTO ServiceBookings (user_phone_number, provider_phone_number, customer_status, user_name, provider_name, start_time, StartDate, service_type, apartment, Region) OUTPUT INSERTED.id VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (customer_mobile_number, provider_mobile_number, status, customer_username, provider_name, start_time, start_date, service, apartment, area))
+            cursor.execute('INSERT INTO ServiceBookings (user_phone_number, provider_phone_number, customer_status, user_name, provider_name, start_time, StartDate, service_type, apartment, Region, user_address) OUTPUT INSERTED.id VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (customer_mobile_number, provider_mobile_number, status, customer_username, provider_name, start_time, start_date, service, apartment, area, user_address))
             last_inserted_id = cursor.fetchone().id
             conn.commit()
 
@@ -679,6 +679,7 @@ def booking():
                     sb.service_type,
                     sb.apartment,
                     sb.Region,  -- Added Region field
+                    sb.user_address,
                     sp.Services AS service_provider_services,
                     sp.Locations AS service_provider_locations,
                     ad.MobileNumber AS user_phone_number,
@@ -706,6 +707,7 @@ def booking():
                     "user_details": {
                         "user_name": row.user_name,
                         "user_phone_number": row.user_phone_number,
+                        "user_address": row.user_address
                     },
                     "start_time": row.start_time,
                     "start_date": row.StartDate,
