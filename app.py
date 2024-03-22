@@ -1,11 +1,14 @@
 import flask
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, send_file
 from flask_cors import CORS, cross_origin
 import pyodbc
 from datetime import time, timedelta, datetime, date
 from dateutil import parser
 from flask_mail import Mail, Message
 from flask import make_response
+import base64
+import io
+from io import BytesIO
 
 app = Flask(__name__)
 CORS(app) 
