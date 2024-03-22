@@ -1,14 +1,11 @@
 import flask
-from flask import Flask, request, jsonify, Response, send_file
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS, cross_origin
 import pyodbc
 from datetime import time, timedelta, datetime, date
 from dateutil import parser
 from flask_mail import Mail, Message
 from flask import make_response
-import base64
-import io
-from io import BytesIO
 
 app = Flask(__name__)
 CORS(app) 
@@ -1405,7 +1402,6 @@ def execute_query(query, parameters=None):
     cursor.execute(query, parameters)
     return cursor.fetchone()
 
-
 @app.route('/get_service_provider', methods=['GET'])
 @cross_origin()
 def get_service_provider():
@@ -1422,12 +1418,6 @@ def get_service_provider():
 
             # Create a dictionary with column names as keys and corresponding values
             serviceproviders_data = dict(zip(columns, maidreg_data))
-
-            # If 'Image' column is present and not None, encode image data as base64
-            if 'Image' in serviceproviders_data and serviceproviders_data['Image'] is not None:
-                image_data = serviceproviders_data['Image']
-                encoded_image = base64.b64encode(image_data).decode('utf-8')  # Convert bytes to base64 string
-                serviceproviders_data['Image'] = encoded_image  # Include base64-encoded image data
 
             return jsonify({'serviceproviders': serviceproviders_data})
         else:
