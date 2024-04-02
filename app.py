@@ -280,7 +280,6 @@ def serviceproviderlogin(mobile_number):
         # Return an error response with a 500 status code (Internal Server Error)
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/edit_user', methods=['PUT'])
 @cross_origin()
 def edit_user():
@@ -395,6 +394,7 @@ def delete_maid_by_mobile():
     except Exception as e:
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
+        
 @app.route('/update_maid_by_mobile', methods=['PUT'])
 @cross_origin()
 def update_maid_by_mobile():
@@ -852,6 +852,7 @@ def customer_cancelled_requests():
     }
 
     return jsonify(response)
+    
 @app.route('/serviceprovider/requests', methods=['GET'])
 @cross_origin()
 def get_requests():
@@ -930,7 +931,6 @@ def get_requests_details():
     }
 
     return jsonify(response)
-
 
 @app.route('/profile_details', methods=['POST'])
 @cross_origin()
