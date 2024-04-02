@@ -1259,7 +1259,6 @@ def make_call():
     else:
         return jsonify({"error": f"Error: {response.status_code}, {response.text}"}), response.status_code
 
-
 @app.route('/get_latest_details', methods=['GET'])
 @cross_origin()
 def get_latest_details():
@@ -1286,12 +1285,9 @@ def get_latest_details():
             result = []
             for details in latest_details:
                 details_dict = dict(zip([column[0] for column in cursor.description], details))
-                try:
-                    # Format the StartDate field using the format_date function
-                    details_dict['StartDate'] = format_date(details_dict['StartDate'])
-                    result.append(details_dict)
-                except ValueError as ve:
-                    print(f"Error formatting date: {ve}")
+                # Format the StartDate field using strftime
+                details_dict['StartDate'] = details_dict['StartDate'].strftime('%Y-%m-%d')  # Adjust the format as needed
+                result.append(details_dict)
 
             print(f"Latest details for mobile_number {mobile_number}: {result}")
             return jsonify({'latest_details': result})
@@ -1312,12 +1308,9 @@ def get_latest_details():
                 result = []
                 for details in all_details:
                     details_dict = dict(zip([column[0] for column in cursor.description], details))
-                    try:
-                        # Format the StartDate field using the format_date function
-                        details_dict['StartDate'] = format_date(details_dict['StartDate'])
-                        result.append(details_dict)
-                    except ValueError as ve:
-                        print(f"Error formatting date: {ve}")
+                    # Format the StartDate field using strftime
+                    details_dict['StartDate'] = details_dict['StartDate'].strftime('%Y-%m-%d')  # Adjust the format as needed
+                    result.append(details_dict)
 
                 print(f"All available details for mobile_number {mobile_number}: {result}")
                 return jsonify({'latest_details': result})
@@ -1327,6 +1320,7 @@ def get_latest_details():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/insertaddress', methods=['POST'])
 @cross_origin()
