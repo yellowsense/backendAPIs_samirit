@@ -1067,6 +1067,7 @@ def find_matching_service_providers(locations, services, start_time_str, region)
             SELECT ID, Name, Gender, Services, Locations,PhoneNumber, Timings, RATING, Region, Image
             FROM maidreg
             WHERE CHARINDEX(?, Services COLLATE SQL_Latin1_General_CP1_CI_AS) > 0
+            AND Status = 'available'
         """
 
         # Check if locations is provided
