@@ -1433,7 +1433,8 @@ def exotelaccept():
         if not data:
             return jsonify({'error': 'No query parameters provided'}), 400
 
-        print('status: accept', data)
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f'Time: {current_time}, status: accept, data: {data}')
 
         # You can process the data here as needed
 
@@ -1449,7 +1450,8 @@ def exotelreject():
         if not data:
             return jsonify({'error': 'No query parameters provided'}), 400
 
-        print('status: reject', data)
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f'Time: {current_time}, status: reject, data: {data}')
 
         # You can process the data here as needed
 
