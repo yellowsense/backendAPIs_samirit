@@ -1356,7 +1356,6 @@ def insert_address():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-
 @app.route('/address_details', methods=['GET'])
 @cross_origin()
 def address_details():
@@ -1378,22 +1377,26 @@ def address_details():
     # Convert the result to a list of dictionaries for JSON response
     result_list = []
     for address_details in address_details_list:
+        address_parts = address_details.address.split(',')
+        if len(address_parts) < 3:
+            app.logger.error("Address format is incorrect: %s", address_details.address)
+            continue
+
         result_dict = {
             "id": address_details.id,  # replace with the actual column name
             "registermobilenumber": address_details.registermobilenumber,  # replace with the actual column name
             "mobilenumber": address_details.mobilenumber,  # replace with the actual column name
             "name": address_details.name,  # replace with the actual column name
             "address": {
-                "houseno": address_details.address.split(',')[0].strip(),
-                "roadname": address_details.address.split(',')[1].strip(),
-                "pincode": address_details.address.split(',')[2].strip()
+                "houseno": address_parts[0].strip(),
+                "roadname": address_parts[1].strip(),
+                "pincode": address_parts[2].strip()
             }
         }
         result_list.append(result_dict)
 
     return jsonify(result_list)
-
-
+    
 def execute_query(query, parameters=None):
     cursor.execute(query, parameters)
     return cursor.fetchone()
