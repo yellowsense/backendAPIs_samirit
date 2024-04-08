@@ -55,6 +55,57 @@ def get_society_names():
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
         
+# @app.route('/insert_maid', methods=['POST'])
+# @cross_origin()
+# def insert_maid():
+#     try:
+#         # Extract parameters from the JSON body for POST requests
+#         data = request.json
+#         aadhar_number = data.get('AadharNumber')
+#         name = data.get('Name')
+#         phone_number = data.get('PhoneNumber')
+#         gender = data.get('Gender')
+#         services = data.get('Services')
+#         locations = data.get('Locations')
+#         timings = data.get('Timings')
+#         age = data.get('age')
+#         languages = data.get('languages')
+#         Region = data.get('Region')
+
+#         # Check if the phone number already exists in the database
+#         cursor = conn.cursor()
+#         cursor.execute("SELECT COUNT(*) FROM maidreg WHERE PhoneNumber = ?", (phone_number,))
+#         count = cursor.fetchone()[0]
+
+#         if count > 0:
+#             # Phone number already registered, return a message
+#             return jsonify({"error": "Phone number already registered"}), 400
+
+#         # Execute the stored procedure
+#         cursor.execute(
+#             "EXEC InsertMaidRegistration "
+#             "@AadharNumber = ?, "
+#             "@Name = ?, "
+#             "@PhoneNumber = ?, "
+#             "@Gender = ?, "
+#             "@Services = ?, "
+#             "@Locations = ?, "
+#             "@Timings = ?,"
+#             "@age = ?, "
+#             "@languages = ?, "
+#             "@Region = ? ",
+#             (aadhar_number, name, phone_number, gender, services, locations, timings, age, languages, Region)
+#         )
+#         conn.commit()
+#         cursor.close()
+
+#         # Return a success message
+#         return jsonify({"message": "Maid entry added successfully"})
+#     except Exception as e:
+#         # Log the error and return an error message in case of an exception
+#         app.logger.error(str(e))
+#         return jsonify({"error": "Internal Server Error"}), 500
+
 @app.route('/insert_maid', methods=['POST'])
 @cross_origin()
 def insert_maid():
@@ -72,6 +123,9 @@ def insert_maid():
         languages = data.get('languages')
         Region = data.get('Region')
 
+        # Default status value
+        status = "available"
+
         # Check if the phone number already exists in the database
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM maidreg WHERE PhoneNumber = ?", (phone_number,))
@@ -81,7 +135,7 @@ def insert_maid():
             # Phone number already registered, return a message
             return jsonify({"error": "Phone number already registered"}), 400
 
-        # Execute the stored procedure
+        # Execute the stored procedure to insert maid's information
         cursor.execute(
             "EXEC InsertMaidRegistration "
             "@AadharNumber = ?, "
@@ -97,6 +151,11 @@ def insert_maid():
             (aadhar_number, name, phone_number, gender, services, locations, timings, age, languages, Region)
         )
         conn.commit()
+
+        # Update the status separately
+        cursor.execute("UPDATE maidreg SET status = ? WHERE PhoneNumber = ?", (status, phone_number))
+        conn.commit()
+
         cursor.close()
 
         # Return a success message
@@ -105,6 +164,7 @@ def insert_maid():
         # Log the error and return an error message in case of an exception
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
+
 
 @app.route('/get_maid_details/<int:maid_id>', methods=['GET'])
 @cross_origin()
