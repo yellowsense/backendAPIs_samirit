@@ -585,7 +585,8 @@ def get_customer_booking_details(customer_mobile_number):
                 'ServiceStatus' : booking['ServiceStatus'],
                 'booking_id': booking['id'],
                 'StartDate': booking['StartDate'],
-                'start_time': booking['start_time']
+                'start_time': booking['start_time'],
+                'user_address': booking['user_address']
             }
 
             # If apartment is empty, use Region as the location key
