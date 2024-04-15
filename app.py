@@ -706,9 +706,6 @@ def booking():
         if status not in ['confirm', 'cancel']:
             return jsonify({"error": "Invalid customer status"}), 400
 
-        if status == 'cancel':
-            return jsonify({"message": "Booking canceled"})
-
         # Get the username of the customer
         cursor.execute('SELECT Username FROM accountdetails WHERE MobileNumber = ?', (customer_mobile_number,))
         customer_username_result = cursor.fetchone()
@@ -727,10 +724,13 @@ def booking():
             area = data.get('area')
             user_address = data.get('user_address')  # New field for the apartment area
 
-            # Insert into ServiceBookings and retrieve the last inserted ID
-            cursor.execute('INSERT INTO ServiceBookings (user_phone_number, provider_phone_number, customer_status, user_name, provider_name, start_time, StartDate, service_type, apartment, Region, user_address) OUTPUT INSERTED.id VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (customer_mobile_number, provider_mobile_number, status, customer_username, provider_name, start_time, start_date, service, apartment, area, user_address))
-            last_inserted_id = cursor.fetchone().id
+            # Insert into ServiceBookings table
+            cursor.execute('INSERT INTO ServiceBookings (user_phone_number, provider_phone_number, customer_status, user_name, provider_name, start_time, StartDate, service_type, apartment, Region, user_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (customer_mobile_number, provider_mobile_number, status, customer_username, provider_name, start_time, start_date, service, apartment, area, user_address))
             conn.commit()
+
+            # Retrieve the last inserted ID
+            cursor.execute('SELECT MAX(id) FROM ServiceBookings')
+            last_inserted_id = cursor.fetchone()[0]
 
             query = '''
                 SELECT
