@@ -683,6 +683,7 @@ def convert_time_to_string(time_obj, use_12_hour_format=True):
     else:
         return time_obj.strftime('%H:%M')
 
+
 @app.route('/booking', methods=['POST'])
 @cross_origin()
 def booking():
@@ -724,8 +725,39 @@ def booking():
             area = data.get('area')
             user_address = data.get('user_address')  # New field for the apartment area
 
+            # Additional fields
+            custom_services = data.get('CustomServices', '')  # default to empty string if not provided
+            booking_type = data.get('BookingType', '')  # default to empty string if not provided
+            preferred_gender = data.get('PreferredGender', '')  # default to empty string if not provided
+            cooking_options = data.get('CookingOptions', '')  # default to empty string if not provided
+            age_of_children = data.get('AgeOfChildren', '')  # default to empty string if not provided
+            specific_preference = data.get('SpecificPreference', '')  # default to empty string if not provided
+
+            # Determine the status and ServiceStatus based on the status provided
+            if status == 'cancel':
+                booking_status = 'cancel'
+                service_status = 'canceled'
+            elif status == 'confirm':
+                booking_status = 'Pending'
+                service_status = ''
+            else:
+                return jsonify({"error": "Invalid customer status"}), 400
+
             # Insert into ServiceBookings table
-            cursor.execute('INSERT INTO ServiceBookings (user_phone_number, provider_phone_number, customer_status, user_name, provider_name, start_time, StartDate, service_type, apartment, Region, user_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (customer_mobile_number, provider_mobile_number, status, customer_username, provider_name, start_time, start_date, service, apartment, area, user_address))
+            cursor.execute('''
+                INSERT INTO ServiceBookings (
+                    user_phone_number, provider_phone_number, customer_status, user_name, 
+                    provider_name, start_time, StartDate, service_type, apartment, 
+                    Region, user_address, Status, ServiceStatus,
+                    CustomServices, BookingType, PreferredGender, CookingOptions, AgeOfChildren, SpecificPreference
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''',
+                (customer_mobile_number, provider_mobile_number, status, customer_username, 
+                provider_name, start_time, start_date, service, apartment, area, user_address,
+                booking_status, service_status, custom_services, booking_type, preferred_gender,
+                cooking_options, age_of_children, specific_preference)
+            )
             conn.commit()
 
             # Retrieve the last inserted ID
@@ -747,7 +779,13 @@ def booking():
                     sp.Services AS service_provider_services,
                     sp.Locations AS service_provider_locations,
                     ad.MobileNumber AS user_phone_number,
-                    sb.customer_status
+                    sb.customer_status,
+                    sb.CustomServices,
+                    sb.BookingType,
+                    sb.PreferredGender,
+                    sb.CookingOptions,
+                    sb.AgeOfChildren,
+                    sb.SpecificPreference
                 FROM
                     ServiceBookings sb
                     INNER JOIN maidreg sp ON sb.provider_phone_number = sp.PhoneNumber
@@ -778,7 +816,13 @@ def booking():
                     "service_type": row.service_type,
                     "apartment": row.apartment,
                     "area": row.Region,  # Added area field
-                    "customer_status": row.customer_status
+                    "customer_status": row.customer_status,
+                    "CustomServices": row.CustomServices,
+                    "BookingType": row.BookingType,
+                    "PreferredGender": row.PreferredGender,
+                    "CookingOptions": row.CookingOptions,
+                    "AgeOfChildren": row.AgeOfChildren,
+                    "SpecificPreference": row.SpecificPreference
                 }
 
                 return jsonify(booking_details)
@@ -791,6 +835,7 @@ def booking():
         return jsonify({"error": "Internal Server Error"}), 500
     finally:
         cursor.close()
+
         
 @app.route('/getcustomermaiddetails', methods=['GET'])
 @cross_origin()
