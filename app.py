@@ -1164,7 +1164,7 @@ def parse_time_string(time_str):
         return start_time, end_time
     except ValueError:
         return None, None
-def find_matching_service_providers(locations, services, start_time_str, region):
+def find_matching_service_providers(locations, services, start_time_str, region, gender=None):
     try:
         # Check if services is empty
         if not services:
@@ -1172,7 +1172,7 @@ def find_matching_service_providers(locations, services, start_time_str, region)
 
         # Initial part of the query
         query = """
-            SELECT ID, Name, Gender, Services, Locations,PhoneNumber, Timings, RATING, Region, Image
+            SELECT ID, Name, Gender, Services, Locations, PhoneNumber, Timings, RATING, Region, Image
             FROM maidreg
             WHERE CHARINDEX(?, Services COLLATE SQL_Latin1_General_CP1_CI_AS) > 0
             AND Status = 'available'
@@ -1186,20 +1186,25 @@ def find_matching_service_providers(locations, services, start_time_str, region)
         if region is not None:
             query += " AND CHARINDEX(?, region) > 0"
 
+        # Check if gender is provided
+        if gender:
+            query += " AND Gender = ?"
+
         # Order by rating
         query += " ORDER BY RATING DESC"
 
-        if locations and region:
-            cursor.execute(query, (services, locations, region))
-        elif locations:
-            cursor.execute(query, (services, locations))
-        else:
-            cursor.execute(query, (services, region))
+        params = [services]
+
+        if locations:
+            params.append(locations)
+        if region is not None:
+            params.append(region)
+        if gender:
+            params.append(gender)
+
+        cursor.execute(query, tuple(params))
         
-
         rows = cursor.fetchall()
-
-        # rest of the code remains unchanged...
 
         start_time = parser.parse(f'1900-01-01 {start_time_str}').time()
         if start_time is None:
@@ -1224,7 +1229,10 @@ def find_matching_service_providers(locations, services, start_time_str, region)
 
             timings = [timing.strip("' ") for timing in (row.Timings.split(',') if row.Timings else [])]
 
-            # if row_locations and any(locations.strip().lower() in loc.strip("' ").lower() for loc in row_locations):
+            # Check if gender is provided and match with row's gender
+            if gender and row.Gender.lower() != gender.lower():
+                continue
+
             if services.lower() in [serv.strip().lower() for serv in row_services]:
                 if timings:
                     for timing_range in timings:
@@ -1239,7 +1247,7 @@ def find_matching_service_providers(locations, services, start_time_str, region)
                                 "ID": row.ID,
                                 "Name": row.Name,
                                 "Gender": row.Gender,
-                                "PhoneNumber":row.PhoneNumber,
+                                "PhoneNumber": row.PhoneNumber,
                                 "Services": row_services,
                                 "Locations": row_locations,
                                 "Region": row_region,
@@ -1256,7 +1264,7 @@ def find_matching_service_providers(locations, services, start_time_str, region)
     except pyodbc.Error as e:
         app.logger.error("Error querying service providers: %s", e)
         return {"error": "Error querying service providers"}
-        
+
 @app.route('/get_matching_service_providers', methods=['GET', 'POST'])
 @cross_origin()
 def get_matching_providers():
@@ -1266,6 +1274,7 @@ def get_matching_providers():
         services = request.args.get('Services')
         date = request.args.get('date')
         start_time = request.args.get('start_time')
+        gender = request.args.get('Gender')  # Add gender parameter
     elif request.method == 'POST':
         data = request.json
         locations = data.get('Locations')
@@ -1273,18 +1282,20 @@ def get_matching_providers():
         services = data.get('Services')
         date = data.get('date')
         start_time = data.get('start_time')
+        gender = data.get('Gender')  # Add gender parameter
     else:
         return jsonify({"error": "Unsupported method"})
     
     if locations is None and region is None and not services or not date or not start_time:
         return jsonify({"error": "Either 'locations' or 'region' is mandatory"})
 
-    matching_providers = find_matching_service_providers(locations, services, start_time,region)
+    matching_providers = find_matching_service_providers(locations, services, start_time, region, gender)  # Pass gender parameter
 
     if matching_providers:
         return jsonify({"providers": matching_providers})
     else:
         return jsonify({"error": "No matching service providers found"})
+
 
 @app.route('/get_maid_by_phone', methods=['GET'])
 @cross_origin()
