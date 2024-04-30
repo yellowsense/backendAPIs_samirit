@@ -9,7 +9,7 @@ from flask import make_response
 
 app = Flask(__name__)
 CORS(app) 
-#, resources={r"/*": {"origins": "https://yellowsense.in/"}})
+#, resources={r"/*": {"origins": "*"}})
 # app.config['CORS_HEADERS'] = 'Content-Type'
 
 # Database connection setup
@@ -49,6 +49,7 @@ def get_society_names():
         
         # Set CORS headers
         # response.headers["Access-Control-Allow-Origin"]="https://yellowsense.in/"
+        response.headers['Access-Control-Allow-Origin'] = '*'
         response.headers["Access-Control-Allow-Methods"]= "GET, POST, OPTIONS, HEAD"
         response.headers["Access-Control-Allow-Headers"]= "Content-Type"
         return response
