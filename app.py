@@ -120,7 +120,7 @@ def insert_maid():
         services = data.get('Services')
         locations = data.get('Locations')
         timings = data.get('Timings')
-        age = data.get('age')
+        age = data.get('age')  # Age is optional
         languages = data.get('languages')
         Region = data.get('Region')
 
@@ -136,25 +136,21 @@ def insert_maid():
             # Phone number already registered, return a message
             return jsonify({"error": "Phone number already registered"}), 400
 
-        # Execute the stored procedure to insert maid's information
-        cursor.execute(
-            "EXEC InsertMaidRegistration "
-            "@AadharNumber = ?, "
-            "@Name = ?, "
-            "@PhoneNumber = ?, "
-            "@Gender = ?, "
-            "@Services = ?, "
-            "@Locations = ?, "
-            "@Timings = ?,"
-            "@age = ?, "
-            "@languages = ?, "
-            "@Region = ? ",
-            (aadhar_number, name, phone_number, gender, services, locations, timings, age, languages, Region)
-        )
-        conn.commit()
+        # Execute the SQL query to insert maid's information
+        if age is None:  # Check if age is provided
+            cursor.execute(
+                "INSERT INTO maidreg (AadharNumber, Name, PhoneNumber, Gender, Services, Locations, Timings, languages, Region, status) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (aadhar_number, name, phone_number, gender, services, locations, timings, languages, Region, status)
+            )
+        else:
+            cursor.execute(
+                "INSERT INTO maidreg (AadharNumber, Name, PhoneNumber, Gender, Services, Locations, Timings, age, languages, Region, status) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (aadhar_number, name, phone_number, gender, services, locations, timings, age, languages, Region, status)
+            )
 
-        # Update the status separately
-        cursor.execute("UPDATE maidreg SET status = ? WHERE PhoneNumber = ?", (status, phone_number))
+        # Commit the transaction
         conn.commit()
 
         cursor.close()
