@@ -8,7 +8,9 @@ from flask_mail import Mail, Message
 from flask import make_response
 
 app = Flask(__name__)
-CORS(app) 
+CORS(app, resources={r"/*": {"origins": ["https://househelp.yellowsense.in", "https://yellowsense.in"]}})
+
+# CORS(app) 
 #, resources={r"/*": {"origins": "*"}})
 # app.config['CORS_HEADERS'] = 'Content-Type'
 
@@ -34,7 +36,7 @@ def add_headers(response):
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
     return response
 
-@app.route('/society_names', methods=['OPTIONS', 'GET', 'POST', 'HEAD'])
+@app.route('/society_names', methods=['GET'])
 @cross_origin()
 def get_society_names():
     try:
@@ -45,16 +47,32 @@ def get_society_names():
         # Convert the result into an array of dictionaries with id and name
         society_data = [{"id": row.society_id, "name": row.society_name} for row in rows]
 
-        response=jsonify(society_data)  # Return JSON with id and name
-        
-        # Set CORS headers
-        # response.headers["Access-Control-Allow-Origin"]="https://yellowsense.in/"
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers["Access-Control-Allow-Methods"]= "GET, POST, OPTIONS, HEAD"
-        response.headers["Access-Control-Allow-Headers"]= "Content-Type"
+        response = jsonify(society_data)  # Return JSON with id and name
         return response
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
+        
+# @app.route('/society_names', methods=['OPTIONS', 'GET', 'POST', 'HEAD'])
+# @cross_origin()
+# def get_society_names():
+#     try:
+#         # Execute a SQL query to retrieve society names and IDs
+#         cursor.execute("SELECT society_id, society_name FROM Society")
+#         rows = cursor.fetchall()
+
+#         # Convert the result into an array of dictionaries with id and name
+#         society_data = [{"id": row.society_id, "name": row.society_name} for row in rows]
+
+#         response=jsonify(society_data)  # Return JSON with id and name
+        
+#         # Set CORS headers
+#         # response.headers["Access-Control-Allow-Origin"]="https://yellowsense.in/"
+#         response.headers['Access-Control-Allow-Origin'] = '*'
+#         response.headers["Access-Control-Allow-Methods"]= "GET, POST, OPTIONS, HEAD"
+#         response.headers["Access-Control-Allow-Headers"]= "Content-Type"
+#         return response
+#     except pyodbc.Error as e:
+#         return jsonify({"error": str(e)})
         
 # @app.route('/insert_maid', methods=['POST'])
 # @cross_origin()
