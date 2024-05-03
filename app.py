@@ -9,7 +9,7 @@ from flask import make_response
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": ["https://househelp.yellowsense.in", "https://yellowsense.in"]}})
-
+app.config['CORS_HEADERS'] = 'Content-Type'
 # CORS(app) 
 #, resources={r"/*": {"origins": "*"}})
 # app.config['CORS_HEADERS'] = 'Content-Type'
@@ -32,6 +32,7 @@ except pyodbc.Error as e:
 # Function to add custom headers to every response
 @app.after_request
 def add_headers(response): 
+    response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
     return response
