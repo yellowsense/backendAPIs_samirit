@@ -662,7 +662,8 @@ def get_customer_booking_details(customer_mobile_number):
                 'booking_id': booking['id'],
                 'StartDate': booking['StartDate'],
                 'start_time': booking['start_time'],
-                'user_address': booking['user_address']
+                'user_address': booking['user_address'],
+                'TotalAmount': booking['TotalAmount']
             }
 
             # If apartment is empty, use Region as the location key
