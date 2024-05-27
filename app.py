@@ -636,6 +636,51 @@ def customer_details(mobile_number):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# @app.route('/customer-booking-details/<customer_mobile_number>', methods=['GET'])
+# @cross_origin()
+# def get_customer_booking_details(customer_mobile_number):
+#     try:
+#         # Query booking details for a specific customer from ServiceBookings table
+#         booking_sql_query = f"SELECT * FROM ServiceBookings WHERE user_phone_number = '{customer_mobile_number}' ORDER BY id DESC"
+#         cursor.execute(booking_sql_query)
+#         booking_details = cursor.fetchall()
+
+#         # Convert the query result to a list of dictionaries for JSON response
+#         booking_details_list = [dict(zip([column[0] for column in cursor.description], row)) for row in booking_details]
+
+#         if not booking_details_list:
+#             return jsonify({'message': 'No booking details found for the customer'}), 404
+
+#         # Process booking details to create provider details list
+#         provider_details_list = []
+#         for booking in booking_details_list:
+#             provider_details_dict = {
+#                 'provider_name': booking['provider_name'],
+#                 'service_type': booking['service_type'],
+#                 'status': booking['status'],
+#                 'ServiceStatus' : booking['ServiceStatus'],
+#                 'booking_id': booking['id'],
+#                 'StartDate': booking['StartDate'],
+#                 'start_time': booking['start_time'],
+#                 'user_address': booking['user_address'],
+#                 'TotalAmount': booking['TotalAmount']
+#             }
+
+#             # If apartment is empty, use Region as the location key
+#             if not booking['apartment']:
+#                 provider_details_dict['location'] = booking['Region']
+#             else:
+#                 # If apartment has a value, use it as the location key
+#                 provider_details_dict['location'] = booking['apartment']
+
+#             provider_details_list.append(provider_details_dict)
+
+#         return jsonify({'provider_details': provider_details_list})
+
+#     except Exception as e:
+#         print(f"Error: {str(e)}")
+#         return jsonify({"error": "Internal Server Error"}), 500
+
 @app.route('/customer-booking-details/<customer_mobile_number>', methods=['GET'])
 @cross_origin()
 def get_customer_booking_details(customer_mobile_number):
@@ -651,29 +696,46 @@ def get_customer_booking_details(customer_mobile_number):
         if not booking_details_list:
             return jsonify({'message': 'No booking details found for the customer'}), 404
 
+        # Fetch all details from the maidreg table
+        maidreg_sql_query = "SELECT * FROM maidreg"
+        cursor.execute(maidreg_sql_query)
+        maid_details_all = cursor.fetchall()
+
+        # Convert maid details to a list of dictionaries
+        maid_details_list = [dict(zip([column[0] for column in cursor.description], row)) for row in maid_details_all]
+
         # Process booking details to create provider details list
         provider_details_list = []
         for booking in booking_details_list:
-            provider_details_dict = {
-                'provider_name': booking['provider_name'],
-                'service_type': booking['service_type'],
-                'status': booking['status'],
-                'ServiceStatus' : booking['ServiceStatus'],
-                'booking_id': booking['id'],
-                'StartDate': booking['StartDate'],
-                'start_time': booking['start_time'],
-                'user_address': booking['user_address'],
-                'TotalAmount': booking['TotalAmount']
-            }
+            provider_phone_number = booking['provider_phone_number']
 
-            # If apartment is empty, use Region as the location key
-            if not booking['apartment']:
-                provider_details_dict['location'] = booking['Region']
-            else:
-                # If apartment has a value, use it as the location key
-                provider_details_dict['location'] = booking['apartment']
+            # Find the maid details corresponding to the provider_phone_number
+            maid_details = next((maid for maid in maid_details_list if maid['PhoneNumber'] == provider_phone_number), None)
 
-            provider_details_list.append(provider_details_dict)
+            if maid_details:
+                provider_details_dict = {
+                    'provider_name': booking['provider_name'],
+                    'service_type': booking['service_type'],
+                    'status': booking['status'],
+                    'ServiceStatus': booking['ServiceStatus'],
+                    'booking_id': booking['id'],
+                    'StartDate': booking['StartDate'],
+                    'start_time': booking['start_time'],
+                    'user_address': booking['user_address'],
+                    'TotalAmount': booking['TotalAmount']
+                }
+
+                # If apartment is empty, use Region as the location key
+                if not booking['apartment']:
+                    provider_details_dict['location'] = booking['Region']
+                else:
+                    # If apartment has a value, use it as the location key
+                    provider_details_dict['location'] = booking['apartment']
+
+                # Add maid details to provider details
+                provider_details_dict['maid_details'] = maid_details
+
+                provider_details_list.append(provider_details_dict)
 
         return jsonify({'provider_details': provider_details_list})
 
