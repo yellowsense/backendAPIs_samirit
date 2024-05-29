@@ -42,11 +42,11 @@ def add_headers(response):
 def get_society_names():
     try:
         # Execute a SQL query to retrieve society names and IDs
-        cursor.execute("SELECT society_id, society_name FROM Society")
+        cursor.execute("SELECT society_id, society_name, SocietyCode FROM Society")
         rows = cursor.fetchall()
 
         # Convert the result into an array of dictionaries with id and name
-        society_data = [{"id": row.society_id, "name": row.society_name} for row in rows]
+        society_data = [{"id": row.society_id, "name": row.society_name, "code": row.SocietyCode} for row in rows]
 
         response = jsonify(society_data)  # Return JSON with id and name
         return response
