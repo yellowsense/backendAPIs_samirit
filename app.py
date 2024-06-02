@@ -6,6 +6,10 @@ from datetime import time, timedelta, datetime, date
 from dateutil import parser
 from flask_mail import Mail, Message
 from flask import make_response
+import requests
+import json
+import uuid
+import logging 
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": ["https://househelp.yellowsense.in", "https://yellowsense.in"]}})
@@ -37,6 +41,38 @@ def add_headers(response):
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
     return response
 
+# Your Azure Translator settings
+translator_endpoint = "https://api.cognitive.microsofttranslator.com"
+subscription_key = "fd061617ad6a42fb9c45ca3d7e11ffd1"
+location = "centralindia"
+
+def translate_text(text, target_language):
+    path = '/translate?api-version=3.0'
+    constructed_url = translator_endpoint + path
+
+    params = {
+        'from': 'en',  # Source language (English in this case)
+        'to': [target_language]  # Target language (specified in function argument)
+    }
+
+    headers = {
+        'Ocp-Apim-Subscription-Key': subscription_key,
+        'Ocp-Apim-Subscription-Region': location,
+        'Content-type': 'application/json',
+        'X-ClientTraceId': str(uuid.uuid4())
+    }
+
+    body = [{'text': text}]
+
+    try:
+        response = requests.post(constructed_url, params=params, headers=headers, json=body)
+        response.raise_for_status()
+        translations = response.json()
+        return translations[0]['translations'][0]['text']
+    except requests.exceptions.RequestException as e:
+        app.logger.error("Translation request failed: %s", e)
+        return text  # Return original text on translation failure
+
 @app.route('/society_names', methods=['GET'])
 @cross_origin()
 def get_society_names():
@@ -45,10 +81,18 @@ def get_society_names():
         cursor.execute("SELECT society_id, society_name, SocietyCode FROM Society")
         rows = cursor.fetchall()
 
-        # Convert the result into an array of dictionaries with id and name
+        # Convert the result into a list of dictionaries with id, name, and code
         society_data = [{"id": row.society_id, "name": row.society_name, "code": row.SocietyCode} for row in rows]
 
-        response = jsonify(society_data)  # Return JSON with id and name
+        # Get the language parameter from the query string, defaulting to English ('en')
+        target_language = request.args.get('language', 'en')
+
+        # Translate society names if the target language is not English
+        if target_language != 'en':
+            for society in society_data:
+                society['name'] = translate_text(society['name'], target_language)
+
+        response = jsonify(society_data)
         return response
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
@@ -1215,22 +1259,34 @@ def profile_details():
         cursor.execute("ROLLBACK TRANSACTION;")
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
-        
-        
+
+
+# Flask route to retrieve area names with optional language parameter
 @app.route('/area_names', methods=['GET'])
 @cross_origin()
 def get_area_names():
+    language = request.args.get('language', 'en')  # Default to English if language parameter not provided
+    
     try:
         # Execute a SQL query to retrieve area IDs and names
         cursor.execute("SELECT AreaID, AreaName FROM Area")
         rows = cursor.fetchall()
 
         # Convert the result into an array of dictionaries with id and name
-        area_data = [{"id": row.AreaID, "name": row.AreaName} for row in rows]
+        area_data = [{"id": row.AreaID, "name": translate_text(row.AreaName, language)} for row in rows]
 
-        return jsonify(area_data)  # Return JSON with id and name
+        return jsonify(area_data)  # Return JSON with id and translated name
+    
     except pyodbc.Error as e:
-        return jsonify({"error": str(e)})
+        error_message = {"error": str(e)}
+        logging.error(f"Database query error: {error_message}")
+        return jsonify(error_message), 500  # Return error response with HTTP status code 500
+
+    except Exception as e:
+        error_message = {"error": str(e)}
+        logging.error(f"An unexpected error occurred: {error_message}")
+        return jsonify(error_message), 500  # Return error response with HTTP status code 500
+
 def parse_time_string(time_str):
     try:
         start_str, end_str = time_str.split('-')
