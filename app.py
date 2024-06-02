@@ -1516,64 +1516,148 @@ def make_call():
     else:
         return jsonify({"error": f"Error: {response.status_code}, {response.text}"}), response.status_code
 
+# @app.route('/get_latest_details', methods=['GET'])
+# @cross_origin()
+# def get_latest_details():
+#     try:
+#         mobile_number = request.args.get('mobile_number')
+
+#         print(f"Received request for mobile_number: {mobile_number}")
+
+#         cursor = conn.cursor()
+
+#         # Query to retrieve the latest 5 details for the specified mobile number
+#         query = (
+#             "SELECT TOP 5 user_name, service_type, apartment, StartDate, start_time, status "
+#             "FROM ServiceBookings "
+#             "WHERE provider_phone_number = ? "
+#             "ORDER BY created_at DESC;"
+#         )
+
+#         cursor.execute(query, mobile_number)
+#         latest_details = cursor.fetchall()
+
+#         if latest_details:
+#             # Convert the pyodbc.Row objects to a list of dictionaries
+#             result = []
+#             for details in latest_details:
+#                 details_dict = dict(zip([column[0] for column in cursor.description], details))
+#                 # Format the StartDate field using strftime
+#                 details_dict['StartDate'] = details_dict['StartDate'].strftime('%Y-%m-%d')  # Adjust the format as needed
+#                 result.append(details_dict)
+
+#             print(f"Latest details for mobile_number {mobile_number}: {result}")
+#             return jsonify({'latest_details': result})
+#         else:
+#             # If there are no latest details, retrieve all details (up to 5)
+#             all_details_query = (
+#                 "SELECT user_name, service_type, apartment, StartDate, start_time, status "
+#                 "FROM ServiceBookings "
+#                 "WHERE provider_phone_number = ? "
+#                 "ORDER BY created_at DESC;"
+#             )
+
+#             cursor.execute(all_details_query, mobile_number)
+#             all_details = cursor.fetchall()
+
+#             if all_details:
+#                 # Convert the pyodbc.Row objects to a list of dictionaries
+#                 result = []
+#                 for details in all_details:
+#                     details_dict = dict(zip([column[0] for column in cursor.description], details))
+#                     # Format the StartDate field using strftime
+#                     details_dict['StartDate'] = details_dict['StartDate'].strftime('%Y-%m-%d')  # Adjust the format as needed
+#                     result.append(details_dict)
+
+#                 print(f"All available details for mobile_number {mobile_number}: {result}")
+#                 return jsonify({'latest_details': result})
+#             else:
+#                 print(f"No details found for mobile_number {mobile_number}")
+#                 return jsonify({'error': 'No details found for the provided mobile number'}), 404
+
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
+
 @app.route('/get_latest_details', methods=['GET'])
 @cross_origin()
 def get_latest_details():
     try:
         mobile_number = request.args.get('mobile_number')
+        language_code = request.args.get('language_code', 'en')  # Default to English if not provided
 
         print(f"Received request for mobile_number: {mobile_number}")
 
         cursor = conn.cursor()
 
-        # Query to retrieve the latest 5 details for the specified mobile number
+        # Query to retrieve details for the specified mobile number
         query = (
-            "SELECT TOP 5 user_name, service_type, apartment, StartDate, start_time, status "
+            "SELECT user_name, service_type, apartment, StartDate, start_time, status "
             "FROM ServiceBookings "
             "WHERE provider_phone_number = ? "
             "ORDER BY created_at DESC;"
         )
 
         cursor.execute(query, mobile_number)
-        latest_details = cursor.fetchall()
+        details = cursor.fetchall()
 
-        if latest_details:
-            # Convert the pyodbc.Row objects to a list of dictionaries
-            result = []
-            for details in latest_details:
-                details_dict = dict(zip([column[0] for column in cursor.description], details))
-                # Format the StartDate field using strftime
-                details_dict['StartDate'] = details_dict['StartDate'].strftime('%Y-%m-%d')  # Adjust the format as needed
-                result.append(details_dict)
+        if not details:
+            print(f"No details found for mobile_number {mobile_number}")
+            return jsonify({'error': 'No details found for the provided mobile number'}), 404
 
-            print(f"Latest details for mobile_number {mobile_number}: {result}")
-            return jsonify({'latest_details': result})
-        else:
-            # If there are no latest details, retrieve all details (up to 5)
-            all_details_query = (
-                "SELECT user_name, service_type, apartment, StartDate, start_time, status "
-                "FROM ServiceBookings "
-                "WHERE provider_phone_number = ? "
-                "ORDER BY created_at DESC;"
-            )
+        result = []
+        for detail in details:
+            details_dict = dict(zip([column[0] for column in cursor.description], detail))
+            details_dict['StartDate'] = details_dict['StartDate'].strftime('%Y-%m-%d')  # Adjust the format as needed
+            
+            # Translate each field
+            for key in details_dict:
+                if details_dict[key]:
+                    details_dict[key] = translate_text(details_dict[key], language_code)
+            
+            result.append(details_dict)
 
-            cursor.execute(all_details_query, mobile_number)
-            all_details = cursor.fetchall()
+        print(f"Latest details for mobile_number {mobile_number}: {result}")
 
-            if all_details:
-                # Convert the pyodbc.Row objects to a list of dictionaries
-                result = []
-                for details in all_details:
-                    details_dict = dict(zip([column[0] for column in cursor.description], details))
-                    # Format the StartDate field using strftime
-                    details_dict['StartDate'] = details_dict['StartDate'].strftime('%Y-%m-%d')  # Adjust the format as needed
-                    result.append(details_dict)
+        # Fetch accepted/rejected requests
+        acceptance_query = (
+            "SELECT booking_id, status "
+            "FROM AcceptanceDetails "
+            "WHERE provider_number = ?;"
+        )
 
-                print(f"All available details for mobile_number {mobile_number}: {result}")
-                return jsonify({'latest_details': result})
-            else:
-                print(f"No details found for mobile_number {mobile_number}")
-                return jsonify({'error': 'No details found for the provided mobile number'}), 404
+        cursor.execute(acceptance_query, mobile_number)
+        acceptance_details = cursor.fetchall()
+
+        if acceptance_details:
+            accepted_rejected_results = []
+            for acceptance in acceptance_details:
+                booking_id, status = acceptance
+
+                # Fetch details from ServiceBookings table based on booking_id
+                booking_query = (
+                    "SELECT user_name, service_type, apartment, StartDate, start_time, status "
+                    "FROM ServiceBookings "
+                    "WHERE id = ?;"
+                )
+
+                cursor.execute(booking_query, booking_id)
+                booking_details = cursor.fetchone()
+
+                if booking_details:
+                    booking_details_dict = dict(zip([column[0] for column in cursor.description], booking_details))
+                    booking_details_dict['StartDate'] = booking_details_dict['StartDate'].strftime('%Y-%m-%d')  # Adjust the format as needed
+                    
+                    # Translate each field
+                    for key in booking_details_dict:
+                        if booking_details_dict[key]:
+                            booking_details_dict[key] = translate_text(booking_details_dict[key], language_code)
+                    
+                    booking_details_dict['status'] = status  # Add the status from AcceptanceDetails
+                    accepted_rejected_results.append(booking_details_dict)
+
+            result.extend(accepted_rejected_results)
+
+        return jsonify({'latest_details': result})
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
