@@ -1165,6 +1165,130 @@ def get_requests_details():
 
     return jsonify(response)
 
+# @app.route('/profile_details', methods=['POST'])
+# @cross_origin()
+# def profile_details():
+#     try:
+#         data = request.json
+#         user_mobile_number = data.get('user_mobile_number')
+
+#         cursor.execute("BEGIN TRANSACTION;")
+
+#         # Update or insert into maidreg
+#         cursor.execute('SELECT * FROM maidreg WHERE PhoneNumber = ?', (user_mobile_number,))
+#         user_in_maidreg = cursor.fetchone()
+
+#         if user_in_maidreg:
+#             update_query_maidreg = """
+#                 UPDATE maidreg
+#                 SET Name = COALESCE(?, Name),
+#                     Services = COALESCE(?, Services),
+#                     Locations = COALESCE(?, Locations),
+#                     Timings = COALESCE(?, Timings),
+#                     AadharNumber = COALESCE(?, AadharNumber),
+#                     RATING = COALESCE(?, RATING),
+#                     languages = COALESCE(?, languages),
+#                     second_category = COALESCE(?, second_category),
+#                     Region = COALESCE(?, Region),
+#                     description = COALESCE(?, description),
+#                     Sunday_availability = COALESCE(?, Sunday_availability),
+#                     years_of_experience = COALESCE(?, years_of_experience),
+#                     age = COALESCE(?, age),
+#                     Gender = COALESCE(?, Gender),
+#                     pancardnumber = COALESCE(?, pancardnumber)
+#                 WHERE PhoneNumber = ?
+#             """
+#             cursor.execute(
+#                 update_query_maidreg,
+#                 (
+#                     data.get('name'),
+#                     data.get('services'),
+#                     data.get('locations'),
+#                     data.get('timings'),
+#                     data.get('aadhar_number'),
+#                     data.get('rating'),
+#                     data.get('languages'),
+#                     data.get('second_category'),
+#                     data.get('region'),
+#                     data.get('description'),
+#                     data.get('sunday_availability'),
+#                     data.get('years_of_experience'),
+#                     data.get('age'),
+#                     data.get('gender'),
+#                     data.get('pan_card'),
+#                     user_mobile_number,
+#                 )
+#             )
+#             conn.commit()
+#         else:
+#             insert_query_maidreg = """
+#                 INSERT INTO maidreg (PhoneNumber, Name, Services, Locations, Timings, AadharNumber , RATING ,languages, second_category , Region , description , Sunday_availability ,years_of_experience, age , Gender , pancardnumber)
+#                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+#             """
+#             cursor.execute(
+#                 insert_query_maidreg,
+#                 (
+#                     user_mobile_number,
+#                     data.get('name'),
+#                     data.get('services'),
+#                     data.get('locations'),
+#                     data.get('timings'),
+#                     data.get('aadhar_number'),
+#                     data.get('rating'),
+#                     data.get('languages'),
+#                     data.get('second_category'),
+#                     data.get('region'),
+#                     data.get('description'),
+#                     data.get('sunday_availability'),
+#                     data.get('years_of_experience'),
+#                     data.get('age'),
+#                     data.get('gender'),
+#                     data.get('pan_card'),
+#                 )
+#             )
+#             conn.commit()
+
+#         cursor.execute("COMMIT TRANSACTION;")
+
+#         return jsonify({"message": "User profile updated or created successfully"})
+#     except pyodbc.IntegrityError as e:
+#         cursor.execute("ROLLBACK TRANSACTION;")
+#         app.logger.error(str(e))
+#         return jsonify({"error": "Duplicate phone number in maidreg or accountdetails table"}), 500
+#     except Exception as e:
+#         cursor.execute("ROLLBACK TRANSACTION;")
+#         app.logger.error(str(e))
+#         return jsonify({"error": "Internal Server Error"}), 500
+
+def translate_to_english(text):
+    if not text:
+        return text
+
+    path = '/translate?api-version=3.0'
+    constructed_url = translator_endpoint + path
+
+    params = {
+        'to': 'en'  # Target language is English
+    }
+
+    headers = {
+        'Ocp-Apim-Subscription-Key': subscription_key,
+        'Ocp-Apim-Subscription-Region': location,
+        'Content-type': 'application/json',
+        'X-ClientTraceId': str(uuid.uuid4())
+    }
+
+    body = [{'text': text}]
+
+    try:
+        response = requests.post(constructed_url, params=params, headers=headers, json=body)
+        response.raise_for_status()
+        translations = response.json()
+        return translations[0]['translations'][0]['text']
+    except requests.exceptions.RequestException as e:
+        app.logger.error("Translation request failed: %s", e)
+        return text  # Return original text on translation failure
+
 @app.route('/profile_details', methods=['POST'])
 @cross_origin()
 def profile_details():
@@ -1172,6 +1296,23 @@ def profile_details():
         data = request.json
         user_mobile_number = data.get('user_mobile_number')
 
+        name = translate_to_english(data.get('name'))
+        services = translate_to_english(data.get('services'))
+        locations = translate_to_english(data.get('locations'))
+        timings = translate_to_english(data.get('timings'))
+        aadhar_number = translate_to_english(data.get('aadhar_number'))
+        rating = translate_to_english(data.get('rating'))
+        languages = translate_to_english(data.get('languages'))
+        second_category = translate_to_english(data.get('second_category'))
+        region = translate_to_english(data.get('region'))
+        description = translate_to_english(data.get('description'))
+        sunday_availability = translate_to_english(data.get('sunday_availability'))
+        years_of_experience = translate_to_english(data.get('years_of_experience'))
+        age = translate_to_english(data.get('age'))
+        gender = translate_to_english(data.get('gender'))
+        pan_card = translate_to_english(data.get('pan_card'))
+
+        cursor = conn.cursor()
         cursor.execute("BEGIN TRANSACTION;")
 
         # Update or insert into maidreg
@@ -1201,21 +1342,21 @@ def profile_details():
             cursor.execute(
                 update_query_maidreg,
                 (
-                    data.get('name'),
-                    data.get('services'),
-                    data.get('locations'),
-                    data.get('timings'),
-                    data.get('aadhar_number'),
-                    data.get('rating'),
-                    data.get('languages'),
-                    data.get('second_category'),
-                    data.get('region'),
-                    data.get('description'),
-                    data.get('sunday_availability'),
-                    data.get('years_of_experience'),
-                    data.get('age'),
-                    data.get('gender'),
-                    data.get('pan_card'),
+                    name,
+                    services,
+                    locations,
+                    timings,
+                    aadhar_number,
+                    rating,
+                    languages,
+                    second_category,
+                    region,
+                    description,
+                    sunday_availability,
+                    years_of_experience,
+                    age,
+                    gender,
+                    pan_card,
                     user_mobile_number,
                 )
             )
@@ -1229,21 +1370,21 @@ def profile_details():
                 insert_query_maidreg,
                 (
                     user_mobile_number,
-                    data.get('name'),
-                    data.get('services'),
-                    data.get('locations'),
-                    data.get('timings'),
-                    data.get('aadhar_number'),
-                    data.get('rating'),
-                    data.get('languages'),
-                    data.get('second_category'),
-                    data.get('region'),
-                    data.get('description'),
-                    data.get('sunday_availability'),
-                    data.get('years_of_experience'),
-                    data.get('age'),
-                    data.get('gender'),
-                    data.get('pan_card'),
+                    name,
+                    services,
+                    locations,
+                    timings,
+                    aadhar_number,
+                    rating,
+                    languages,
+                    second_category,
+                    region,
+                    description,
+                    sunday_availability,
+                    years_of_experience,
+                    age,
+                    gender,
+                    pan_card,
                 )
             )
             conn.commit()
@@ -1259,7 +1400,6 @@ def profile_details():
         cursor.execute("ROLLBACK TRANSACTION;")
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
-
 
 # Flask route to retrieve area names with optional language parameter
 @app.route('/area_names', methods=['GET'])
