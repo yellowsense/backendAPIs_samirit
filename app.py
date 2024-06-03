@@ -1723,7 +1723,7 @@ def make_call():
 def get_latest_details():
     try:
         mobile_number = request.args.get('mobile_number')
-        language_code = request.args.get('language_code', 'en')  # Default to English if not provided
+        target_language = request.args.get('language', 'en')  # Default to English if not provided
 
         print(f"Received request for mobile_number: {mobile_number}")
 
@@ -1752,7 +1752,7 @@ def get_latest_details():
             # Translate each field
             for key in details_dict:
                 if details_dict[key]:
-                    details_dict[key] = translate_text(details_dict[key], language_code)
+                    details_dict[key] = translate_text(details_dict[key], target_language)
             
             result.append(details_dict)
 
@@ -1790,7 +1790,7 @@ def get_latest_details():
                     # Translate each field
                     for key in booking_details_dict:
                         if booking_details_dict[key]:
-                            booking_details_dict[key] = translate_text(booking_details_dict[key], language_code)
+                            booking_details_dict[key] = translate_text(booking_details_dict[key], target_language)
                     
                     booking_details_dict['status'] = status  # Add the status from AcceptanceDetails
                     accepted_rejected_results.append(booking_details_dict)
