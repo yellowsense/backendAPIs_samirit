@@ -45,14 +45,165 @@ def add_headers(response):
 translator_endpoint = "https://api.cognitive.microsofttranslator.com"
 subscription_key = "fd061617ad6a42fb9c45ca3d7e11ffd1"
 location = "centralindia"
+custom_translations = {
+    "Somu Sonnet": {
+        "hi": "सोमु सोननेट",
+        "te": "సోము సొన్నెట్",
+        "kn": "ಸೋಮು ಸೊನೆಟ್"
+    },
+    "Sobha Eternia": {
+        "hi": "शोभा एटरनिया",
+        "te": "శోభా ఎటర్నియా",
+        "kn": "ಶೋಭಾ ಎಟರ್ನಿಯಾ"
+    },
+    "Sattva Senorita": {
+        "hi": "सत्वा सेनोरिटा",
+        "te": "సత్వా సెనోరిటా",
+        "kn": "ಸತ್ವ ಸೆನೊರಿಟಾ"
+    },
+    "VRR Fortuna": {
+        "hi": "वीआरआर फॉर्चुना",
+        "te": "విఆర్ ఆర్ ఫార్చునా",
+        "kn": "ವಿಆರ್ ಆರ್ ಫಾರ್ಚುನಾ"
+    },
+    "UBER VERDANT": {
+        "hi": "उबर वर्दांत",
+        "te": "యూబర్ వెర్డాంట్",
+        "kn": "ಯುಬರ್ ವರ್ಡಾಂಟ್"
+    },
+     "Assetz Here and Now": {
+        "hi": "एसेट्स हियर एंड नाउ",
+        "te": "అసెట్స్ హీర్ అండ్ నౌ",
+        "kn": "ಆಸ್ಸೆಟ್ಸ್ ಹೀರ್ ಅಂಡ್ ನೌ"
+    },
+    "Regency Pinnacle Height (RPH)": {
+        "hi": "रेजेंसी पिनाकल हाइट (आरपीएच)",
+        "te": "రీజెన్సీ పినాకిల్ హైట్ (ఆర్పిహెచ్)",
+        "kn": "ರೀಜೆನ್ಸಿ ಪಿನಾಕಲ್ ಹೆಯ್ಟ್ (ಆರ್‌ಪಿಹೆಚ್)"
+    },
+    "BTM Layout": {
+        "hi": "बीटीएम लेआउट",
+        "te": "బీటీఎం లేఅవుట్",
+        "kn": "ಬಿಟಿಎಂ ಲೇಔಟ್"
+    },
+    "Doddenakundi": {
+        "hi": "डोडेनाकुंडी",
+        "te": "డోడెనాకుండి",
+        "kn": "ಡೊಡೆನಕುಂಡಿ"
+    },
+    "Ect phase2": {
+        "hi": "इक्ट फेज2",
+        "te": "ఇక్ట్ ఫేజ్2",
+        "kn": "ಇಕ್ಟ್ ಫೇಜ್2"
+    },
+    "Guddahatti": {
+        "hi": "गुद्दहट्टी",
+        "te": "గుద్దహట్టి",
+        "kn": "ಗುದ್ದಹಟ್ಟಿ"
+    },
+    "HAL Layout": {
+        "hi": "एचएल लेआउट",
+        "te": "హెచ్‌ఎల్ లేఅవుట్",
+        "kn": "ಹೆಚ್‌ಎಲ್ ಲೇಔಟ್"
+    },
+    "HBR Layout": {
+        "hi": "एचबीआर लेआउट",
+        "te": "హెచ్బిఆర్ లేఅవుట్",
+        "kn": "ಹೆಚ್ಬಿಆರ್ ಲೇಔಟ್"
+    },
+    "Hongasandra": {
+        "hi": "होंगासंद्रा",
+        "te": "హొంగాసంద్ర",
+        "kn": "ಹೊಂಗಾಸಂದ್ರ"
+    },
+    "Horamavu Agara": {
+        "hi": "होरमावु आगरा",
+        "te": "హొరమావు ఆగరా",
+        "kn": "ಹೊರಮಾವು ಆಗರಾ"
+    },
+    "HSR Layout": {
+        "hi": "एचएसआर लेआउट",
+        "te": "హెచ్‌ఎస్‌ఆర్ లేఅవుట్",
+        "kn": "ಹೆಚ್‌ಎಸ್‌ಆರ್ ಲೇಔಟ್"
+    },
+    "Mico Layout": {
+        "hi": "माइको लेआउट",
+        "te": "మైకో లేఅవుట్",
+        "kn": "ಮೈಕೋ ಲೇಔಟ್"
+    },
+    "Munnekollal": {
+        "hi": "मुन्नेकोल्लल",
+        "te": "మున్నెకొల్లల్",
+        "kn": "ಮುನ್ನೆಕೊಲ್ಲಲ್"
+    },
+    "Pai Layout": {
+        "hi": "पाई लेआउट",
+        "te": "పై లేఅవుట్",
+        "kn": "ಪೈ ಲೇಔಟ್"
+    },
+    "RMV Extension": {
+        "hi": "आरएमवी एक्सटेंशन",
+        "te": "ఆర్ఎమ్వీ ఎక్స్టెన్షన్",
+        "kn": "ಆರ್ಎಮ್ವೀ ಎಕ್ಸ್ಟೆನ್ಷನ್"
+    },
+    "Singasandra": {
+        "hi": "सिंगासंद्रा",
+        "te": "సింగాసంద్ర",
+       "kn": "ಸಿಂಗಾಸಂದ್ರ"
+    },
+    "Tavarekere-BTM": {
+        "hi": "तावारेकेरे-बीटीएम",
+        "te": "తావారెకెరె-బీటీఎం",
+        "kn": "ತಾವಾರೆಕೆರೆ-ಬಿಟಿಎಂ"
+    },
+    "Thindlu": {
+        "hi": "थिंदलू",
+        "te": "థింద్లు",
+        "kn": "ಥಿಂದ್ಲು"
+    },
+    "Varthur": {
+        "hi": "वर्थुर",
+        "te": "వర్థుర్",
+        "kn": "ವರ್ಥುರ್"
+    },
+    "Adugodi": {
+        "hi": "आदुगोडि",
+        "te": "అడుగోడి",
+        "kn": "ಅಡುಗೋಡಿ"
+    },
+    "Attibele": {
+        "hi": "अत्तिबेले",
+        "te": "అట్టిబెలె",
+        "kn": "ಅಟ್ಟಿಬೆಲೆ"
+    },
+    "Kogilu": {
+        "hi": "कोगिलु",
+        "te": "కొగిలు",
+        "kn": "ಕೊಗಿಲು"
+    },
+    "Kudlu Gate": {
+        "hi": "कुडलु गेट",
+        "te": "కుడ్లు గేట్",
+        "kn": "ಕುಡ್ಲು ಗೇಟ್"
+    },
+    "Jakkuru Layout": {
+        "hi": "जाक्कुरु लेआउट",
+        "te": "జాక్కురు లేఅవుట్",
+        "kn": "ಜಾಕ್ಕುರು ಲೇಔಟ್"
+    }
+}
 
+# Function to translate text using Azure Translator
 def translate_text(text, target_language):
+    if text in custom_translations and target_language in custom_translations[text]:
+        return custom_translations[text][target_language]
+
     path = '/translate?api-version=3.0'
     constructed_url = translator_endpoint + path
 
     params = {
-        'from': 'en',  # Source language (English in this case)
-        'to': [target_language]  # Target language (specified in function argument)
+        'from': 'en',
+        'to': target_language
     }
 
     headers = {
@@ -68,10 +219,16 @@ def translate_text(text, target_language):
         response = requests.post(constructed_url, params=params, headers=headers, json=body)
         response.raise_for_status()
         translations = response.json()
-        return translations[0]['translations'][0]['text']
+        translated_text = translations[0]['translations'][0]['text']
+        translated_text = ' '.join(translated_text.split())
+        print(f"Original: {text} -> Translated: {translated_text}")  # Debugging output
+        return translated_text
     except requests.exceptions.RequestException as e:
-        app.logger.error("Translation request failed: %s", e)
+        print(f"Translation request failed for text '{text}': {e}")
         return text  # Return original text on translation failure
+
+    
+
 
 @app.route('/society_names', methods=['GET'])
 @cross_origin()
@@ -96,6 +253,34 @@ def get_society_names():
         return response
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
+    
+
+@app.route('/area_names', methods=['GET'])
+@cross_origin()
+def get_area_names():
+    language = request.args.get('language', 'en')  # Default to English if language parameter not provided
+    
+    try:
+        # Execute a SQL query to retrieve area IDs and names
+        cursor.execute("SELECT AreaID, AreaName FROM Area")
+        rows = cursor.fetchall()
+
+        # Convert the result into an array of dictionaries with id and name
+        area_data = [{"id": row.AreaID, "name": translate_text(row.AreaName, language)} for row in rows]
+
+        return jsonify(area_data)  # Return JSON with id and translated name
+    
+    except pyodbc.Error as e:
+        error_message = {"error": str(e)}
+        logging.error(f"Database query error: {error_message}")
+        return jsonify(error_message), 500  # Return error response with HTTP status code 500
+
+    except Exception as e:
+        error_message = {"error": str(e)}
+        logging.error(f"An unexpected error occurred: {error_message}")
+        return jsonify(error_message), 500  # Return error response with HTTP status code 500
+
+    
         
 # @app.route('/society_names', methods=['OPTIONS', 'GET', 'POST', 'HEAD'])
 # @cross_origin()
@@ -1401,31 +1586,31 @@ def profile_details():
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
 
-# Flask route to retrieve area names with optional language parameter
-@app.route('/area_names', methods=['GET'])
-@cross_origin()
-def get_area_names():
-    language = request.args.get('language', 'en')  # Default to English if language parameter not provided
+# # Flask route to retrieve area names with optional language parameter
+# @app.route('/area_names', methods=['GET'])
+# @cross_origin()
+# def get_area_names():
+#     language = request.args.get('language', 'en')  # Default to English if language parameter not provided
     
-    try:
-        # Execute a SQL query to retrieve area IDs and names
-        cursor.execute("SELECT AreaID, AreaName FROM Area")
-        rows = cursor.fetchall()
+#     try:
+#         # Execute a SQL query to retrieve area IDs and names
+#         cursor.execute("SELECT AreaID, AreaName FROM Area")
+#         rows = cursor.fetchall()
 
-        # Convert the result into an array of dictionaries with id and name
-        area_data = [{"id": row.AreaID, "name": translate_text(row.AreaName, language)} for row in rows]
+#         # Convert the result into an array of dictionaries with id and name
+#         area_data = [{"id": row.AreaID, "name": translate_text(row.AreaName, language)} for row in rows]
 
-        return jsonify(area_data)  # Return JSON with id and translated name
+#         return jsonify(area_data)  # Return JSON with id and translated name
     
-    except pyodbc.Error as e:
-        error_message = {"error": str(e)}
-        logging.error(f"Database query error: {error_message}")
-        return jsonify(error_message), 500  # Return error response with HTTP status code 500
+#     except pyodbc.Error as e:
+#         error_message = {"error": str(e)}
+#         logging.error(f"Database query error: {error_message}")
+#         return jsonify(error_message), 500  # Return error response with HTTP status code 500
 
-    except Exception as e:
-        error_message = {"error": str(e)}
-        logging.error(f"An unexpected error occurred: {error_message}")
-        return jsonify(error_message), 500  # Return error response with HTTP status code 500
+#     except Exception as e:
+#         error_message = {"error": str(e)}
+#         logging.error(f"An unexpected error occurred: {error_message}")
+#         return jsonify(error_message), 500  # Return error response with HTTP status code 500
 
 def parse_time_string(time_str):
     try:
