@@ -234,7 +234,6 @@ def translate_text(text, target_language):
 
     
 
-
 @app.route('/society_names', methods=['GET'])
 @cross_origin()
 def get_society_names():
@@ -243,35 +242,52 @@ def get_society_names():
         cursor.execute("SELECT society_id, society_name, SocietyCode FROM Society")
         rows = cursor.fetchall()
 
-        # Convert the result into a list of dictionaries with id, name, and code
-        society_data = [{"id": row.society_id, "name": row.society_name, "code": row.SocietyCode} for row in rows]
-
         # Get the language parameter from the query string, defaulting to English ('en')
         target_language = request.args.get('language', 'en')
 
+        # Prepare the response data
+        society_data = []
+
         # Translate society names if the target language is not English
-        if target_language != 'en':
-            for society in society_data:
-                society['name'] = translate_text(society['name'], target_language)
+        for row in rows:
+            society_name = row.society_name
+            if target_language != 'en':
+                society_name = translate_text(society_name, target_language)
+            society_data.append({
+                "id": row.society_id,
+                "name": society_name,
+                "code": row.SocietyCode
+            })
 
         response = jsonify(society_data)
         return response
     except pyodbc.Error as e:
         return jsonify({"error": str(e)})
-    
+
 
 @app.route('/area_names', methods=['GET'])
 @cross_origin()
 def get_area_names():
-    language = request.args.get('language', 'en')  # Default to English if language parameter not provided
-    
     try:
+        # Get the language parameter from the query string, defaulting to English ('en')
+        language = request.args.get('language', 'en')
+
         # Execute a SQL query to retrieve area IDs and names
         cursor.execute("SELECT AreaID, AreaName FROM Area")
         rows = cursor.fetchall()
 
-        # Convert the result into an array of dictionaries with id and name
-        area_data = [{"id": row.AreaID, "name": translate_text(row.AreaName, language)} for row in rows]
+        # Prepare the response data
+        area_data = []
+
+        # Translate area names if the target language is not English
+        for row in rows:
+            area_name = row.AreaName
+            if language != 'en':
+                area_name = translate_text(row.AreaName, language)
+            area_data.append({
+                "id": row.AreaID,
+                "name": area_name
+            })
 
         return jsonify(area_data)  # Return JSON with id and translated name
     
@@ -284,7 +300,6 @@ def get_area_names():
         error_message = {"error": str(e)}
         logging.error(f"An unexpected error occurred: {error_message}")
         return jsonify(error_message), 500  # Return error response with HTTP status code 500
-
     
         
 # @app.route('/society_names', methods=['OPTIONS', 'GET', 'POST', 'HEAD'])
