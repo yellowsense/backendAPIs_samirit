@@ -392,6 +392,12 @@ def insert_maid():
         languages = data.get('languages')
         region = data.get('Region')  # Region is optional
 
+        # Convert phone_number and aadhar_number to strings
+        if phone_number is not None:
+            phone_number = str(phone_number)
+        if aadhar_number is not None:
+            aadhar_number = str(aadhar_number)
+
         # Default status value
         status = "available"
 
@@ -440,7 +446,6 @@ def insert_maid():
         # Log the error and return an error message in case of an exception
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
-        
 
 
 @app.route('/get_maid_details/<int:maid_id>', methods=['GET'])
