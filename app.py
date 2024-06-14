@@ -390,7 +390,7 @@ def insert_maid():
         timings = data.get('Timings')
         age = data.get('age')  # Age is optional
         languages = data.get('languages')
-        Region = data.get('Region')
+        region = data.get('Region')  # Region is optional
 
         # Default status value
         status = "available"
@@ -404,19 +404,30 @@ def insert_maid():
             # Phone number already registered, return a message
             return jsonify({"error": "Phone number already registered"}), 400
 
+        # Build the SQL query
+        sql_query = "INSERT INTO maidreg (AadharNumber, Name, PhoneNumber, Gender, Services, Timings, languages, status"
+        sql_values = "VALUES (?, ?, ?, ?, ?, ?, ?, ?"
+        params = [aadhar_number, name, phone_number, gender, services, timings, languages, status]
+
+        if age is not None:
+            sql_query += ", age"
+            sql_values += ", ?"
+            params.append(age)
+
+        if locations is not None:
+            sql_query += ", Locations"
+            sql_values += ", ?"
+            params.append(locations)
+
+        if region is not None:
+            sql_query += ", Region"
+            sql_values += ", ?"
+            params.append(region)
+
+        sql_query += ") " + sql_values + ")"
+
         # Execute the SQL query to insert maid's information
-        if age is None:  # Check if age is provided
-            cursor.execute(
-                "INSERT INTO maidreg (AadharNumber, Name, PhoneNumber, Gender, Services, Locations, Timings, languages, Region, status) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (aadhar_number, name, phone_number, gender, services, locations, timings, languages, Region, status)
-            )
-        else:
-            cursor.execute(
-                "INSERT INTO maidreg (AadharNumber, Name, PhoneNumber, Gender, Services, Locations, Timings, age, languages, Region, status) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (aadhar_number, name, phone_number, gender, services, locations, timings, age, languages, Region, status)
-            )
+        cursor.execute(sql_query, tuple(params))
 
         # Commit the transaction
         conn.commit()
@@ -429,6 +440,7 @@ def insert_maid():
         # Log the error and return an error message in case of an exception
         app.logger.error(str(e))
         return jsonify({"error": "Internal Server Error"}), 500
+        
 
 
 @app.route('/get_maid_details/<int:maid_id>', methods=['GET'])
