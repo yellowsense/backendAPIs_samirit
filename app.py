@@ -880,7 +880,7 @@ def customer_details(mobile_number):
     try:
 
         # SQL query to retrieve customer details excluding the password
-        query = f"SELECT UserID, Username, MobileNumber FROM accountdetails WHERE MobileNumber = '{mobile_number}'"
+        query = f"SELECT UserID, Username, MobileNumber, Email FROM accountdetails WHERE MobileNumber = '{mobile_number}'"
         
         # Execute the query
         cursor.execute(query)
@@ -894,6 +894,7 @@ def customer_details(mobile_number):
                 'UserID': customer_details[0],
                 'Username': customer_details[1],
                 'MobileNumber': customer_details[2],
+                'Email': customer_details[3],
             }
             return jsonify(result)
         else:
