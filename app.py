@@ -984,7 +984,10 @@ def get_customer_booking_details(customer_mobile_number):
                 'service_type': booking['service_type'],
                 'start_time': booking['start_time'],
                 'status': booking['status'],
-                'user_address': booking['user_address']
+                'user_address': booking['user_address'],
+                'WorkersAmount': booking['worksAmount'],
+                'YellowsenseCommission': booking['ysComAmount'],
+                'AmountPaid': booking['TransactionAmount']
             }
 
             # Find the maid details corresponding to the provider_phone_number
