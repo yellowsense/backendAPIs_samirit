@@ -528,64 +528,6 @@ def get_payment_details_by_mobile_number(mobile_number):
 def row_to_dict(row, columns):
     return {columns[i]: row[i] for i in range(len(columns))}
 
-@app.route('/signup', methods=['POST'])
-@cross_origin()
-def signup():
-    try:
-        # Extract parameters from the JSON body for POST requests
-        data = request.json
-        username = data.get('Username')
-        mobile_number = data.get('MobileNumber')
-        role = data.get('Role')
-
-        if role == 'Customer':
-            # Check if the mobile number is already present in accountdetails
-            cursor.execute("SELECT * FROM accountdetails WHERE MobileNumber=?", (mobile_number,))
-            existing_user = cursor.fetchone()
-
-            if existing_user:
-                # User already exists, return a message with status code 409 (Conflict)
-                return jsonify({"error": "User already registered. Please login."}), 409
-
-            # Insert values into accountdetails table
-            cursor.execute(
-                "INSERT INTO accountdetails (Username, MobileNumber, Role) "
-                "VALUES (?, ?, ?)",
-                (username, mobile_number, role)
-            )
-        else:
-            # Check if the mobile number is already present in maidreg
-            cursor.execute("SELECT * FROM maidreg WHERE PhoneNumber=?", (mobile_number,))
-            existing_maid = cursor.fetchone()
-
-            if existing_maid:
-                # User already exists, return a message with status code 409 (Conflict)
-                return jsonify({"error": "User already registered as a Servicer. Please login."}), 409
-
-            # Insert values into maidreg table
-            cursor.execute(
-                "INSERT INTO maidreg (Name, PhoneNumber) "
-                "VALUES (?, ?)",
-                (username, mobile_number)
-            )
-
-        conn.commit()
-
-        # Return a success message with status code 200
-        return jsonify({"message": "User registration successful"}), 200
-
-    except pyodbc.Error as e:
-        app.logger.error(str(e))
-        # Return an error message with status code 500
-        return jsonify({"error": "Internal Server Error"}), 500
-
-# def generate_unique_code():
-#     while True:
-#         unique_code = f"{random.randint(1000, 9999):04d}"  # Format to 4-digit string
-#         cursor.execute("SELECT * FROM accountdetails WHERE UniqueCode=?", (unique_code,))
-#         if not cursor.fetchone():
-#             return unique_code
-
 # @app.route('/signup', methods=['POST'])
 # @cross_origin()
 # def signup():
@@ -605,14 +547,11 @@ def signup():
 #                 # User already exists, return a message with status code 409 (Conflict)
 #                 return jsonify({"error": "User already registered. Please login."}), 409
 
-#             # Generate a unique 4-digit code
-#             unique_code = generate_unique_code()
-
 #             # Insert values into accountdetails table
 #             cursor.execute(
-#                 "INSERT INTO accountdetails (Username, MobileNumber, Role, UniqueCode) "
-#                 "VALUES (?, ?, ?, ?)",
-#                 (username, mobile_number, role, unique_code)
+#                 "INSERT INTO accountdetails (Username, MobileNumber, Role) "
+#                 "VALUES (?, ?, ?)",
+#                 (username, mobile_number, role)
 #             )
 #         else:
 #             # Check if the mobile number is already present in maidreg
@@ -639,6 +578,67 @@ def signup():
 #         app.logger.error(str(e))
 #         # Return an error message with status code 500
 #         return jsonify({"error": "Internal Server Error"}), 500
+
+def generate_unique_code():
+    while True:
+        unique_code = f"{random.randint(1000, 9999):04d}"  # Format to 4-digit string
+        cursor.execute("SELECT * FROM accountdetails WHERE unique_code=?", (unique_code,))
+        if not cursor.fetchone():
+            return unique_code
+
+@app.route('/signup', methods=['POST'])
+@cross_origin()
+def signup():
+    try:
+        # Extract parameters from the JSON body for POST requests
+        data = request.json
+        username = data.get('Username')
+        mobile_number = data.get('MobileNumber')
+        role = data.get('Role')
+
+        if role == 'Customer':
+            # Check if the mobile number is already present in accountdetails
+            cursor.execute("SELECT * FROM accountdetails WHERE MobileNumber=?", (mobile_number,))
+            existing_user = cursor.fetchone()
+
+            if existing_user:
+                # User already exists, return a message with status code 409 (Conflict)
+                return jsonify({"error": "User already registered. Please login."}), 409
+
+            # Generate a unique 4-digit code
+            unique_code = generate_unique_code()
+
+            # Insert values into accountdetails table
+            cursor.execute(
+                "INSERT INTO accountdetails (Username, MobileNumber, Role, unique_code) "
+                "VALUES (?, ?, ?, ?)",
+                (username, mobile_number, role, unique_code)
+            )
+        else:
+            # Check if the mobile number is already present in maidreg
+            cursor.execute("SELECT * FROM maidreg WHERE PhoneNumber=?", (mobile_number,))
+            existing_maid = cursor.fetchone()
+
+            if existing_maid:
+                # User already exists, return a message with status code 409 (Conflict)
+                return jsonify({"error": "User already registered as a Servicer. Please login."}), 409
+
+            # Insert values into maidreg table
+            cursor.execute(
+                "INSERT INTO maidreg (Name, PhoneNumber) "
+                "VALUES (?, ?)",
+                (username, mobile_number)
+            )
+
+        conn.commit()
+
+        # Return a success message with status code 200
+        return jsonify({"message": "User registration successful"}), 200
+
+    except pyodbc.Error as e:
+        app.logger.error(str(e))
+        # Return an error message with status code 500
+        return jsonify({"error": "Internal Server Error"}), 500
         
 @app.route('/customer_login/<mobile_number>', methods=['GET'])
 @cross_origin()
