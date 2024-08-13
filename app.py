@@ -1050,7 +1050,8 @@ def get_customer_booking_details(customer_mobile_number):
                 'user_address': booking['user_address'],
                 'WorkersAmount': booking['worksAmount'],
                 'YellowsenseCommission': booking['ysComAmount'],
-                'AmountPaid': booking['TransactionAmount']
+                'AmountPaid': booking['TransactionAmount'],
+                'bookingplan_amount' : bookingv['bookingplan_amount']
             }
 
             # Find the maid details corresponding to the provider_phone_number
