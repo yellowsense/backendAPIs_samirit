@@ -1596,7 +1596,7 @@ def profile_details():
         region = translate_to_english(data.get('region'))
         description = translate_to_english(data.get('description'))
         sunday_availability = translate_to_english(data.get('sunday_availability'))
-        years_of_experience = translate_to_english(data.get('years_of_experience'))
+        Years_of_Experience = translate_to_english(data.get('Years_of_Experience'))
         age = translate_to_english(data.get('age'))
         gender = translate_to_english(data.get('gender'))
         pan_card = translate_to_english(data.get('pan_card'))
@@ -1622,7 +1622,7 @@ def profile_details():
                     Region = COALESCE(?, Region),
                     description = COALESCE(?, description),
                     Sunday_availability = COALESCE(?, Sunday_availability),
-                    years_of_experience = COALESCE(?, years_of_experience),
+                    Years_of_Experience = COALESCE(?, Years_of_Experience),
                     age = COALESCE(?, age),
                     Gender = COALESCE(?, Gender),
                     pancardnumber = COALESCE(?, pancardnumber)
@@ -1642,7 +1642,7 @@ def profile_details():
                     region,
                     description,
                     sunday_availability,
-                    years_of_experience,
+                    Years_of_Experience,
                     age,
                     gender,
                     pan_card,
@@ -1652,7 +1652,7 @@ def profile_details():
             conn.commit()
         else:
             insert_query_maidreg = """
-                INSERT INTO maidreg (PhoneNumber, Name, Services, Locations, Timings, AadharNumber , RATING ,languages, second_category , Region , description , Sunday_availability ,years_of_experience, age , Gender , pancardnumber)
+                INSERT INTO maidreg (PhoneNumber, Name, Services, Locations, Timings, AadharNumber , RATING ,languages, second_category , Region , description , Sunday_availability ,Years_of_Experience, age , Gender , pancardnumber)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
             cursor.execute(
@@ -1670,7 +1670,7 @@ def profile_details():
                     region,
                     description,
                     sunday_availability,
-                    years_of_experience,
+                    Years_of_Experience,
                     age,
                     gender,
                     pan_card,
